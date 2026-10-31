@@ -117,3 +117,18 @@ targets_other_repo() {
   done <<< "$targets"
   return 1
 }
+
+# The meta-repo root for directory $1: its git toplevel, or the superproject's
+# when $1 is inside a submodule. Exit status 1 outside any repo.
+meta_root() {
+  local top super
+  top=$(git -C "$1" rev-parse --show-toplevel 2>/dev/null) || return 1
+  super=$(git -C "$top" rev-parse --show-superproject-working-tree 2>/dev/null)
+  printf '%s\n' "${super:-$top}"
+}
+
+# Exit status 0 when a Stop hook is already re-running because a Stop hook
+# blocked: such hooks must then let the agent stop, or it loops forever.
+stop_hook_active() {
+  [ "$(printf '%s' "$HOOK_INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)" = "true" ]
+}

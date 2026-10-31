@@ -5,15 +5,16 @@
 # Reads the active stage from .claude/task/pipeline-queue.json so paths stay
 # in sync with the queue (no hard-coded .tasks/ paths).
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+stop_hook_active && exit 0
 
-input=$(cat)
-queue_file=".claude/task/pipeline-queue.json"
+root=$(meta_root "$HOOK_CWD") || exit 0
+queue_file="$root/.claude/task/pipeline-queue.json"
 
-if [ ! -f "$queue_file" ]; then
-  echo "Blocked: pipeline queue not found at $queue_file" >&2
-  exit 2
-fi
+# No queue: architect-review ran outside the manual pipeline (for example
+# dispatched by ultimate-developer). Nothing to gate.
+[ -f "$queue_file" ] || exit 0
 
 # Pull the review file path and the spec path it gated from the queue
 review_file=$(jq -r 'first(.stages[] | select(.name == "review" and .status == "in-progress") | .output) // empty' "$queue_file")
@@ -23,6 +24,8 @@ if [ -z "$review_file" ]; then
   # Architect-review ran outside the pipeline — nothing to gate on
   exit 0
 fi
+
+case "$review_file" in /*) ;; *) review_file="$root/$review_file" ;; esac
 
 if [ ! -f "$review_file" ]; then
   echo "Blocked: architect-review did not produce $review_file" >&2
