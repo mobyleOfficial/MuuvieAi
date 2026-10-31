@@ -2,24 +2,27 @@
 # Verifies README.md and CLAUDE.md are updated when relevant code changes
 # Triggered before PR creation to catch out-of-sync documentation.
 #
-# Base branch convention (matches CLAUDE.md):
-#   feature/* | fix/*  -> develop
+# Base branch convention (matches CLAUDE.md; the integration branch is `dev`,
+# with `develop` accepted for older clones):
+#   feature/* | fix/*  -> dev
 #   release/*          -> main
-#   develop            -> main (release PR)
-#   anything else      -> develop (default)
+#   dev | develop      -> main (release PR)
+#   anything else      -> dev (default)
 
 set -euo pipefail
 
 # Determine target base branch from current HEAD
 current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
 case "$current_branch" in
-  release/*|develop|main) base_ref="main" ;;
-  *)                      base_ref="develop" ;;
+  release/*|dev|develop|main) base_ref="main" ;;
+  *)                          base_ref="dev" ;;
 esac
 
 # Resolve a usable ref: prefer local, fall back to origin/, then bail out
 resolved_base=""
-for candidate in "$base_ref" "origin/$base_ref"; do
+candidates=("$base_ref" "origin/$base_ref")
+[ "$base_ref" = "dev" ] && candidates+=("develop" "origin/develop")
+for candidate in "${candidates[@]}"; do
   if git rev-parse --verify --quiet "$candidate" >/dev/null; then
     resolved_base="$candidate"
     break

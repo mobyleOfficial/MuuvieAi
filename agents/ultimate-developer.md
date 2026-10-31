@@ -289,7 +289,13 @@ git checkout -b chore/<slug>-bump-refs
 # Stage each submodule that was implemented
 git add muuvie  # if in scope
 git add backend # if in scope
-git commit -m "chore(<slug>): bump submodule refs"
+# Bring the feature map along (rules/common/FEATURE_MAP.md): the check names new
+# endpoints/routes (uncovered) and stale references (problems).
+.claude/skills/muuvie-feature-map/bin/feature-map-check --strict || true
+# If it failed, or the feature changed behaviour a page describes: dispatch
+# Task(subagent_type: "feature-mapper") with pages=<slugs> or uncovered=<json>,
+# re-run the check until it exits 0, then: git add .claude/skills/muuvie-feature-map/features
+git commit -m "chore(<slug>): bump submodule refs and update the feature map"
 git push -u origin chore/<slug>-bump-refs
 gh pr create --base <target> --head chore/<slug>-bump-refs \
   --title "chore(<slug>): bump submodule refs" \
@@ -298,7 +304,7 @@ BUMP_PR=$(gh pr view --json number --jq .number)
 safe_merge "$BUMP_PR"   # Pre-merge gate
 ```
 
-No review loop on the bump PR — pure ref change.
+No review loop on the bump PR — it carries only the ref change and the feature-map pages that follow from it, and `.claude/hooks/check-feature-map.sh` has already checked those against the new refs on push.
 
 ### Recovery: bump PR fails after impl PRs merged
 

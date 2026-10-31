@@ -92,7 +92,11 @@ You may be validating code from:
 - [ ] HTTPS enforced for API calls
 - [ ] CSRF tokens if applicable
 
-### 10. Performance
+### 10. Feature map (meta-repo)
+- [ ] When the change moves a submodule ref or edits `.claude/skills/muuvie-feature-map/`: `.claude/skills/muuvie-feature-map/bin/feature-map-check --strict` exits 0. Report each `problems` entry and each `uncovered` item as an Important finding, with its `fix`.
+- [ ] Pages describing changed behaviour were updated, with new `Mapped at` shas (`rules/common/FEATURE_MAP.md`).
+
+### 11. Performance
 - [ ] No obvious inefficient algorithms or N+1 queries
 - [ ] API calls optimized (pagination, caching where appropriate)
 - [ ] State management doesn't rebuild excessively

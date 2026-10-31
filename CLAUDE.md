@@ -26,7 +26,7 @@ MuuvieAi/
 ├── patches/          # npm patches applied by patch-package on install
 ├── .claude/commands/ # Slash commands (/new-usecase, /review-pr, /ultimate-feature, ...)
 ├── agents/           # Pipeline + reviewer agents (auto-discovered Markdown)
-├── .claude/skills/   # Project-level Claude Code skills (auto-discovered)
+├── .claude/skills/   # Project-level Claude Code skills (auto-discovered), incl. the feature map
 ├── .claude/hooks/    # Pre/Post/SessionStart hooks enforcing rules
 ├── .claude/CLAUDE.md # Claude/tooling-specific behavior (companion to this file)
 ├── .mcp.json         # MCP server registry (repo-management + linear)
@@ -59,7 +59,7 @@ bundle exec fastlane setup_ide
 ```
 
 **Development:**
-- Run: `bundle exec fastlane ios dev` or `bundle exec fastlane android dev`
+- Run: `flutter run --flavor dev --dart-define=FLAVOR=dev --dart-define-from-file=secrets/.env` (needs `secrets/.env` with `DEV_BACKEND_URL`; see the feature map's preconditions)
 - Tests: `flutter test`
 - Code generation: `dart run build_runner build --delete-conflicting-outputs`
 - Linting: `flutter analyze`
@@ -145,6 +145,7 @@ Linting configurations, formatter rules, and architecture policies organized int
 - `common/LOCAL_CLAUDE_CONFIG.md` — Config must use portable relative paths
 - `common/NO_COAUTHORS.md` — Never use Co-Authored-By trailers
 - `common/PYTHON_ENVS.md` — All Python in local venv
+- `common/FEATURE_MAP.md` — The feature map must match the recorded submodule commits
 - `common/variable-naming.md` — Naming conventions
 
 **Frontend Rules (Flutter/Dart):**
@@ -167,6 +168,7 @@ Project-level Claude Code skills, auto-discovered each session from `.claude/ski
 - `muuvie-research-format` — Standardized format for design docs, architecture decisions, and research documentation
 - `setting-up-linear-mcp` — Configure Linear MCP and securely store token
 - `verify-docs-before-pr` — Documentation verification before opening a PR
+- `muuvie-feature-map` — Map of every user-facing feature across both submodules, checked by `bin/feature-map-check`
 
 ### `agents/`
 Auto-discovered Markdown agent definitions (no registration needed). Dispatched via the `Task` tool's `subagent_type` parameter.
@@ -178,6 +180,7 @@ Auto-discovered Markdown agent definitions (no registration needed). Dispatched 
 - `validator` — read-only quality + correctness check across submodules; surfaces inline PR comments
 - `ultimate-developer` — autonomous end-to-end orchestrator; drives spec → plan → impl phases via PR review loops; invoke via `/ultimate-feature`
 - `researcher` — per-topic research sub-agent dispatched by `ultimate-developer` during plan phase
+- `feature-mapper` — writes and repairs feature-map pages by tracing a feature through both submodules; dispatched by `/map-features`
 - `backend-implementer` — Kotlin/Ktor mirror of `implementer-tester`; implements features in the `backend/` submodule
 
 **Reviewer agents** (PR review):
@@ -202,13 +205,14 @@ Slash commands invoked via `/<name>`. Claude Code auto-discovers files from this
 **Pipeline:**
 - `/review-pr <PR#>` — invokes the `reviewer` agent
 - `/ultimate-feature "<request>"` — invokes the `ultimate-developer` agent for autonomous end-to-end delivery
+- `/map-features [<slug>…|--drift|--audit]` — dispatches `feature-mapper` agents to bring the feature map in line with the submodules
 
 The scaffolding commands feed into `implementer-tester` (frontend) and `backend-implementer` (backend).
 
 ### `.claude/hooks/`
 Pre/Post/SessionStart hooks wired in `.claude/settings.json`. Flat directory — one script per file, no subdirectories. Each rule in `rules/` is backed by a hook here; see [.claude/CLAUDE.md § Hook Expectations](.claude/CLAUDE.md#hook-expectations) for the full table and [.claude/hooks/README.md](.claude/hooks/README.md) for per-hook detail.
 
-**Always-on** (wired in `settings.json`): `session-start.sh`, `block-destructive-commands.sh`, `check-coauthor.sh`, `check-python-env.sh`, `check-submodule-ai.sh`, `check-docs-sync.sh`, `format-code.sh`.
+**Always-on** (wired in `settings.json`): `session-start.sh`, `block-destructive-commands.sh`, `check-coauthor.sh`, `check-python-env.sh`, `check-submodule-ai.sh`, `check-docs-sync.sh`, `check-feature-map.sh`, `format-code.sh`.
 
 **Per-agent** (referenced from pipeline-agent frontmatter): `validate-spec.sh`, `validate-audit-only.sh`, `enforce-path-restrictions.sh`, `human-gate-review.sh`, `pipeline-coordinator.sh`, `block-cross-feature-data-imports.sh`, `regenerate-generated-files.sh`, `validate-implementation.sh`, `validate-localization.sh`, `validate-module-structure.sh`, `verify-di-registration.sh`, `validate-backend-structure.sh`, `validate-kotlin-code.sh`, `verify-koin-di-registration.sh`.
 
@@ -247,7 +251,7 @@ Pre/Post/SessionStart hooks wired in `.claude/settings.json`. Flat directory —
 ### Making Cross-Repo Changes
 1. Update backend first
 2. Update frontend to consume new API
-3. Commit both submodule references in MuuvieAi
+3. Commit both submodule references in MuuvieAi, with the feature-map pages the change affects (`/map-features`; enforced by `check-feature-map.sh`)
 
 ### Debugging Integration Issues
 - Check `muuvie/secrets/.env` for correct backend URL
@@ -276,8 +280,7 @@ flutter pub get                                    # Install dependencies
 dart run build_runner build --delete-conflicting-outputs  # Code generation
 flutter test                                       # Run tests
 flutter analyze                                    # Lint
-bundle exec fastlane ios dev                      # Run on iOS
-bundle exec fastlane android dev                  # Run on Android
+flutter run --flavor dev --dart-define=FLAVOR=dev --dart-define-from-file=secrets/.env  # Run (dev flavor)
 ```
 
 **MuuvieBackend (Kotlin):**
@@ -311,6 +314,8 @@ cd backend
 
 **Docs Up To Date:** Every change affecting user-facing behavior, public interfaces, configuration, or directory structure MUST update the corresponding documentation (README.md, CLAUDE.md, subdir READMEs) in the same PR. Enforced by `.claude/hooks/check-docs-sync.sh` on `gh pr create` / `git push`. See [rules/common/DOCS_UP_TO_DATE.md](rules/common/DOCS_UP_TO_DATE.md).
 
+**Feature Map:** `.claude/skills/muuvie-feature-map/` maps every user-facing feature across both submodules. A meta-repo change that moves a submodule ref or edits the map must leave `feature-map-check --strict` passing; a page that no longer matches the app is a bug. Enforced by `.claude/hooks/check-feature-map.sh` on `gh pr create` / `git push`. See [rules/common/FEATURE_MAP.md](rules/common/FEATURE_MAP.md).
+
 ## Conventions
 
 ### Commit Messages
@@ -323,12 +328,12 @@ All commits across child repos follow Conventional Commits format:
 Example: `fix: correct auth token expiry logic`
 
 ### Branch Naming
-- **Feature branches:** `feature/<description>` (target: `develop`)
+- **Feature branches:** `feature/<description>` (target: `dev`)
 - **Release branches:** `release/<version>` (target: `main`)
-- **Bugfix branches:** `fix/<description>` (target: `develop`)
+- **Bugfix branches:** `fix/<description>` (target: `dev`)
 
 ### Pull Requests
-- Feature/bugfix PRs target `develop`
+- Feature/bugfix PRs target `dev`
 - Release PRs target `main`
 - Use Conventional Commits format in PR title
 - No coauthors in PR descriptions
@@ -367,6 +372,7 @@ At the start of each session, load these resources:
 - [`rules/common/LOCAL_CLAUDE_CONFIG.md`](rules/common/LOCAL_CLAUDE_CONFIG.md) — all `.claude/` + `.mcp.json` config must use portable relative paths, no `~/` or absolute user paths
 - [`rules/common/PYTHON_ENVS.md`](rules/common/PYTHON_ENVS.md) — all Python `pip` / `uv` / `poetry` / `conda install` must run inside an active virtualenv
 - [`rules/common/DOCS_UP_TO_DATE.md`](rules/common/DOCS_UP_TO_DATE.md) — public-surface changes must update docs in the same PR (blocked by `check-docs-sync.sh` on `gh pr create` / `git push`)
+- [`rules/common/FEATURE_MAP.md`](rules/common/FEATURE_MAP.md) — the feature map must match the recorded submodule commits (blocked by `check-feature-map.sh` on `gh pr create` / `git push`)
 - [`rules/common/variable-naming.md`](rules/common/variable-naming.md) — naming conventions across both stacks
 
 **Frontend-specific:** `rules/frontend/` — `feature-architecture`, `feature-implementation`, `feature-testing`, `ui-architecture`, `accessibility`, `localization`
@@ -382,6 +388,7 @@ Lint rules (Flutter-side, applied by `implementer-tester` agent): `accessibility
 **3. Skills** — auto-discovered from `.claude/skills/<name>/SKILL.md`:
 - `setting-up-linear-mcp` — configure Linear MCP and securely store the token
 - `muuvie-research-format` — standardized format for design docs / architecture decisions / research
+- `muuvie-feature-map` — map of every user-facing feature across both submodules; open its index before touching a feature
 - `verify-docs-before-pr` — manual docs check (the `check-docs-sync.sh` hook already blocks PRs / pushes that fall out of sync — invoke this skill only for a pre-flight self-check)
 
 **4. Slash commands** — invoked via `/<name>`, defined under `.claude/commands/`:
@@ -389,6 +396,7 @@ Lint rules (Flutter-side, applied by `implementer-tester` agent): `accessibility
 - `/new-kotlin-usecase`, `/new-kotlin-datasource`, `/new-kotlin-repository`, `/new-ktor-endpoint` — Kotlin/Ktor scaffolding, feeds into the `backend-implementer` agent
 - `/review-pr <PR#>` — runs the `reviewer` agent against a GitHub PR
 - `/ultimate-feature "<request>"` — runs the `ultimate-developer` agent for autonomous end-to-end feature delivery
+- `/map-features` — runs `feature-mapper` agents to repair the feature map after a submodule ref moves
 
 **5. Agents** — dispatched via the `Task` tool's `subagent_type` parameter, auto-discovered from `agents/`:
 - `implementer-tester` — Flutter/Dart feature implementation
@@ -396,6 +404,7 @@ Lint rules (Flutter-side, applied by `implementer-tester` agent): `accessibility
 - `architect-review` — spec feasibility review
 - `reviewer` — code quality validation (orchestrates `reviewers/security`, `reviewers/bug-finder`, `reviewers/architecture`)
 - `validator` — final pre-merge validation
+- `feature-mapper` — writes and repairs feature-map pages
 
 These resources are binding for all work in this repo. Obey rules before suggesting code.
 

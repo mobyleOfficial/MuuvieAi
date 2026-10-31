@@ -30,6 +30,7 @@ Before writing any code, understand:
 3. **Kotlin conventions** — Coroutines, suspend functions, null safety
 4. **Koin DI** — Module registration patterns and lazy injection
 5. **Ktor routing** — Extension functions, parameter extraction, HTTP status codes
+6. **The feature-map page** for every feature you touch — `.claude/skills/muuvie-feature-map/features/README.md` indexes them. It names which app screens call each endpoint, so you know who a contract change affects.
 
 If any pattern conflicts with the spec, **stop and ask**. Do not silently deviate.
 
@@ -194,6 +195,7 @@ You may only edit/create under: `backend/src/main/kotlin/**`, `backend/src/test/
 6. Update Koin modules (DataModule, AppModule) with new registrations
 7. Wire routing in `Application.kt`
 8. Run `./gradlew test` to verify everything works
+9. In your final report, list the feature-map pages your change makes untrue (new, removed or renamed endpoints; changed auth, validation or responses). The map lives in the meta-repo, not in `backend/`; it is updated in the meta-repo PR that bumps the submodule ref (`rules/common/FEATURE_MAP.md`).
 
 If tests fail, fix the cited issues before considering work done.
 
