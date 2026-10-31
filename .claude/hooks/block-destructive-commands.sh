@@ -175,11 +175,6 @@ check_text() {
   nohd=$(strip_heredocs "$raw")
   text=$(strip_quotes "$nohd")
 
-  # A shell word at a command position: after a separator, wrappers or VAR=value,
-  # optionally path-qualified (/bin/bash). Mentions inside prose don't qualify.
-  local at_cmd='(^|[;&|({][[:space:]]*)(([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*|env|exec|command|nohup|sudo|then|do|else|time|!)[[:space:]]+)*([^[:space:];&|(){}]*/)?'
-  local shell_c='(ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*'
-
   # On the quote-stripped text, so a message that mentions them doesn't count.
   if printf '%s\n' "$text" | grep -qE '(curl|wget)[^|;&]*\|[[:space:]]*((sudo|env|exec|command|nohup)[[:space:]]+)*([^[:space:]|]*/)?(ba|z)?sh([[:space:]]|$)'; then
     block "piping a download into a shell runs remote code"
@@ -187,20 +182,25 @@ check_text() {
   if printf '%s\n' "$text" | grep -qE ':\(\)[[:space:]]*\{[[:space:]]*:[[:space:]]*\|[[:space:]]*:[[:space:]]*&[[:space:]]*\}'; then
     block "fork bomb"
   fi
-  # `bash -c "$(curl …)"` hides the download inside quotes, so this one reads the
-  # quoted text, with the shell at a command position.
-  if printf '%s\n' "$nohd" | grep -qE "${at_cmd}${shell_c}[[:space:]]+[\"']?\\\$\\((curl|wget)"; then
-    block "running a downloaded script runs remote code"
-  fi
 
   while IFS= read -r seg; do
     check_segment "$seg"
   done < <(command_segments "$text")
 
-  # Nested shells at a command position (bash -c, bash -lc, sh -ec, bash -l -c,
-  # eval): check what they would run.
+  # Nested shells: bash -c, bash -lc, sh -ec, bash -l -c, /bin/sh -c, eval — behind
+  # anything (timeout, xargs, find -exec, if, VAR="a b"). Whether one really runs
+  # is decided on the quote-stripped text, where prose is blanked; its payload is
+  # then read from the text with quotes intact.
+  local shell_c='(ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*'
+  printf '%s\n' "$text" | grep -qE "(^|[[:space:]/])(${shell_c}|eval)([[:space:]]|\$)" || return 0
+
+  # `bash -c "$(curl …)"` runs a download.
+  if printf '%s\n' "$nohd" | grep -qE "${shell_c}[[:space:]]+[\"']?\\\$\\((curl|wget)"; then
+    block "running a downloaded script runs remote code"
+  fi
+
   [ "$depth" -ge 3 ] && return 0
-  local nested="${at_cmd}(${shell_c}|eval)[[:space:]]+"
+  local nested="(${shell_c}|eval)[[:space:]]+"
   while IFS= read -r payload; do
     [ -n "$payload" ] && check_text "$payload" $((depth + 1))
   done < <(printf '%s\n' "$nohd" |

@@ -73,7 +73,9 @@ strip_heredocs() {
 # strings ('…', "…", $'…', spanning lines), keeping the quotes so word
 # positions survive: `git commit -m "never push --force"` becomes
 # `git commit -m ""`. Inside "…", a $(…) or `…` command substitution still
-# runs, so its (stripped) body is emitted on its own line to be checked.
+# runs, so its (stripped) body is checked too: bodies are printed after the
+# whole command, on their own lines, so the command around them stays intact
+# (`git push origin "$(…)" --force` keeps its --force).
 # Escapes outside quotes (don\'t) are honoured. Fails closed: from an
 # unterminated quote on, the text is kept as-is rather than hidden.
 strip_quotes() {
@@ -92,7 +94,7 @@ strip_quotes() {
       }
       return 0
     }
-    function strip(s,   out, n, i, c, j, k, d, subs, inner, e) {
+    function strip(s,   out, n, i, c, j, k, d, inner, e) {
       out = ""; n = length(s); i = 1
       while (i <= n) {
         c = substr(s, i, 1)
@@ -113,7 +115,7 @@ strip_quotes() {
           out = out "\047\047"; i += j + 1; continue
         }
         if (c == "\"") {
-          subs = ""; k = i + 1
+          k = i + 1
           while (k <= n) {
             d = substr(s, k, 1)
             if (d == "\\") { k += 2; continue }
@@ -122,19 +124,19 @@ strip_quotes() {
               e = close_paren(s, k + 2)
               if (e == 0) return out substr(s, i)
               inner = substr(s, k + 2, e - k - 2)
-              subs = subs "\n" strip(inner) "\n"
+              inner = strip(inner); subs = subs "\n" inner
               k = e + 1; continue
             }
             if (d == "`") {
               e = index(substr(s, k + 1), "`")
               if (e == 0) return out substr(s, i)
-              subs = subs "\n" strip(substr(s, k + 1, e - 1)) "\n"
+              inner = strip(substr(s, k + 1, e - 1)); subs = subs "\n" inner
               k += e + 1; continue
             }
             k++
           }
           if (k > n) return out substr(s, i)
-          out = out "\"\"" subs; i = k + 1; continue
+          out = out "\"\""; i = k + 1; continue
         }
         out = out c; i++
       }
@@ -143,9 +145,10 @@ strip_quotes() {
     { buf = buf $0 "\n" }
     END {
       gsub(/\\\n/, " ", buf)
+      subs = ""
       out = strip(buf)
       sub(/\n$/, "", out)
-      print out
+      print out subs
     }'
 }
 
