@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { check } from './check.mjs';
-import { MissingCheckoutError, extractInventory } from './inventory.mjs';
+import { EnvironmentError, extractInventory } from './inventory.mjs';
 import { stale } from './stale.mjs';
 
 // lib/ → muuvie-feature-map/ → skills/ → .claude/ → meta-repo root
@@ -97,12 +97,8 @@ export function main(argv) {
         return fail(`Unknown command "${args.command}"`, 'Use check, inventory, uncovered or stale. See --help.');
     }
   } catch (error) {
-    if (error instanceof MissingCheckoutError) {
-      return fail(
-        `${error.path} not found under ${args.root}`,
-        'Check out the submodules: git submodule update --init --recursive (or pass --root <meta-repo>).',
-      );
-    }
-    throw error;
+    if (error instanceof EnvironmentError) return fail(error.message, error.fix);
+    // Anything else is a bug in the checker, not in the map: exit 2 so the hook doesn't block on it.
+    return fail(`feature-map-check crashed: ${error.stack ?? error}`, 'Report it, and fix lib/ under .claude/skills/muuvie-feature-map. The map itself was not judged.');
   }
 }

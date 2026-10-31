@@ -49,3 +49,10 @@ test('reports nested route blocks as unparsed', () => {
   const { unparsed } = extractInventory(root);
   assert.deepEqual(unparsed.map((u) => [u.line, u.text]), [[1, 'route("/d") {']]);
 });
+
+test('skips commented-out routes and reports path-less ones', () => {
+  const root = makeRepo({ routing: { 'E.kt': '// get("/old") {}\n    /* post("/older") */\nget {\n}\nget("/kept") {} // get("/trailing")\n' } });
+  const { endpoints, unparsed } = extractInventory(root);
+  assert.deepEqual(endpoints.map((e) => e.key), ['GET /kept']);
+  assert.deepEqual(unparsed.map((u) => [u.line, u.text]), [[3, 'get {']]);
+});

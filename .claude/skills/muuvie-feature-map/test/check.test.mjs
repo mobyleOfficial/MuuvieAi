@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { check } from '../lib/check.mjs';
-import { makeRepo, README, SHELVES_FEATURE, SHELVES_ROUTING, HEALTH_ROUTING, SOCKET_ROUTING } from './helpers.mjs';
+import { makeRepo, README, SHELVES_FEATURE, SHELVES_ROUTING, HEALTH_ROUTING, SOCKET_ROUTING, FEATURES_DIR } from './helpers.mjs';
 
 const kinds = (result) => result.problems.map((p) => [p.kind, p.ref]);
 
@@ -137,4 +139,15 @@ test('a widget class ending in Tab is prose unless the router registers it', () 
   const feature = SHELVES_FEATURE.replace('- Code:', '- Widgets: `DiaryTab`, `MaterialPageRoute`\n- Code:');
   const result = check(makeRepo({ features: { 'README.md': README, 'shelves.md': feature } }));
   assert.deepEqual(result.problems, []);
+});
+
+test('a BOM in the ARB file is tolerated', () => {
+  const result = check(makeRepo({ arb: '﻿' + JSON.stringify({ shelvesTitle: 'Estantes' }) }));
+  assert.equal(result.ok, true);
+});
+
+test('a directory named like a page is ignored', () => {
+  const root = makeRepo();
+  mkdirSync(join(root, FEATURES_DIR, 'notes.md'));
+  assert.equal(check(root).ok, true);
 });

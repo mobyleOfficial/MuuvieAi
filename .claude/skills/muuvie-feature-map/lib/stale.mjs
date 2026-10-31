@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { git, isCheckout } from './git.mjs';
 import { FEATURES_DIR, INDEX_FILE, SUBMODULES } from './paths.mjs';
@@ -13,7 +13,7 @@ export function stale(root, { featuresDir = join(root, FEATURES_DIR) } = {}) {
   const files = [];
   const errors = [];
   const names = existsSync(featuresDir)
-    ? readdirSync(featuresDir).filter((n) => n.endsWith('.md') && n !== INDEX_FILE).sort()
+    ? readdirSync(featuresDir).filter((n) => n.endsWith('.md') && n !== INDEX_FILE && statSync(join(featuresDir, n)).isFile()).sort()
     : [];
 
   for (const name of names) {

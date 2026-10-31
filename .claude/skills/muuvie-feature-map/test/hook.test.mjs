@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { cpSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeRepo, FEATURES_DIR, SHELVES_FEATURE } from './helpers.mjs';
@@ -14,13 +15,20 @@ function git(cwd, ...args) {
   assert.equal(result.status, 0, result.stderr);
 }
 
-function runHook(cwd, command) {
-  return spawnSync('bash', [HOOK], { cwd, input: JSON.stringify({ tool_input: { command } }), encoding: 'utf8' });
+/** Runs the hook as Claude Code does: JSON on stdin, carrying the session's cwd. */
+function runHook(cwd, command, { processCwd = tmpdir() } = {}) {
+  return spawnSync('bash', [HOOK], { cwd: processCwd, input: JSON.stringify({ cwd, tool_input: { command } }), encoding: 'utf8' });
 }
 
 /** A meta-repo fixture with the real CLI copied in, `origin/dev` at the first commit. */
 function metaRepo() {
   const root = makeRepo();
+  // The submodules are their own repos, as in a real checkout.
+  for (const name of ['backend', 'muuvie']) {
+    git(join(root, name), 'init', '-q');
+    git(join(root, name), 'add', '-A');
+    git(join(root, name), 'commit', '-q', '-m', 'base');
+  }
   for (const dir of ['bin', 'lib']) cpSync(join(SKILL, dir), join(root, '.claude/skills/muuvie-feature-map', dir), { recursive: true });
   cpSync(join(SKILL, 'package.json'), join(root, '.claude/skills/muuvie-feature-map/package.json'));
   git(root, 'init', '-q', '-b', 'feature/x');
@@ -81,6 +89,30 @@ test("skips a quoted submodule path", () => {
   editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
   assert.equal(runHook(root, "cd 'backend' && git push").status, 0);
   assert.equal(runHook(root, 'git -C "./muuvie" push').status, 0);
+});
+
+test('skips a submodule push however the submodule is named', () => {
+  const root = metaRepo();
+  editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
+  assert.equal(runHook(root, `cd ${join(root, 'muuvie')} && git push`).status, 0);
+  assert.equal(runHook(root, 'git -C ./backend/ push').status, 0);
+  // The session itself sits in a submodule.
+  assert.equal(runHook(join(root, 'backend'), 'git push').status, 0);
+  // A cd that stays inside the meta-repo still gets checked.
+  assert.equal(runHook(root, 'cd .claude && git push').status, 2);
+});
+
+test('a here-string is not a heredoc', () => {
+  const root = metaRepo();
+  editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
+  assert.equal(runHook(root, 'grep x <<< "$v"\ngit push').status, 2);
+});
+
+test('does not block when the checker cannot judge the map', () => {
+  const root = metaRepo();
+  writeFileSync(join(root, 'muuvie/ui/common/lib/l10n/app_pt.arb'), '{ not json');
+  editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
+  assert.equal(runHook(root, 'git push').status, 0);
 });
 
 test('does not block when there is no base branch', () => {

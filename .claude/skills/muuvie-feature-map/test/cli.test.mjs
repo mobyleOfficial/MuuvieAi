@@ -71,3 +71,10 @@ test('--help exits 0 and lists subcommands', () => {
   assert.equal(result.status, 0);
   for (const word of ['check', 'inventory', 'uncovered', '--root']) assert.match(result.stdout, new RegExp(word));
 });
+
+test('exits 2 with a fix when the ARB file is not valid JSON', () => {
+  const { status, json } = run(['--root', makeRepo({ arb: '{ not json' })]);
+  assert.equal(status, 2);
+  assert.match(json.error, /app_pt\.arb/);
+  assert.ok(json.fix);
+});

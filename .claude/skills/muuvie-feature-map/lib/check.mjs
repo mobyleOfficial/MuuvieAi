@@ -1,7 +1,7 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { submoduleStates } from './git.mjs';
-import { extractInventory } from './inventory.mjs';
+import { EnvironmentError, extractInventory } from './inventory.mjs';
 import { ARB_FILE, FEATURES_DIR, INDEX_FILE } from './paths.mjs';
 import { parseFeatureFile, parseNotMapped } from './references.mjs';
 
@@ -35,7 +35,16 @@ function finding(file, line, kind, ref, message) {
 function readArbKeys(root) {
   const path = join(root, ARB_FILE);
   if (!existsSync(path)) return new Set();
-  return new Set(Object.keys(JSON.parse(readFileSync(path, 'utf8'))).filter((k) => !k.startsWith('@')));
+  let arb;
+  try {
+    arb = JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, ''));
+  } catch (error) {
+    throw new EnvironmentError(`${ARB_FILE} is not valid JSON: ${error.message}`, 'Fix the ARB file in muuvie (flutter gen-l10n reads it too), then re-run.');
+  }
+  if (!arb || typeof arb !== 'object' || Array.isArray(arb)) {
+    throw new EnvironmentError(`${ARB_FILE} is not a JSON object`, 'Fix the ARB file in muuvie, then re-run.');
+  }
+  return new Set(Object.keys(arb).filter((k) => !k.startsWith('@')));
 }
 
 function sectionFindings(file, sections) {
@@ -69,7 +78,9 @@ export function check(root, { featuresDir = join(root, FEATURES_DIR), strict = f
   const covered = new Set();
   const notMapped = new Set();
 
-  const names = existsSync(featuresDir) ? readdirSync(featuresDir).filter((n) => n.endsWith('.md')).sort() : [];
+  const names = existsSync(featuresDir)
+    ? readdirSync(featuresDir).filter((n) => n.endsWith('.md') && statSync(join(featuresDir, n)).isFile()).sort()
+    : [];
   const featureFiles = names.filter((n) => n !== INDEX_FILE);
 
   for (const name of names) {
