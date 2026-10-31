@@ -132,3 +132,9 @@ test('unparsed declarations make the check fail', () => {
   assert.equal(result.ok, false);
   assert.deepEqual(kinds(result), [['unparsed-route', 'get(SOME_PATH) { } }']]);
 });
+
+test('a widget class ending in Tab is prose unless the router registers it', () => {
+  const feature = SHELVES_FEATURE.replace('- Code:', '- Widgets: `DiaryTab`, `MaterialPageRoute`\n- Code:');
+  const result = check(makeRepo({ features: { 'README.md': README, 'shelves.md': feature } }));
+  assert.deepEqual(result.problems, []);
+});

@@ -85,8 +85,9 @@ export function check(root, { featuresDir = join(root, FEATURES_DIR), strict = f
         continue;
       }
       if (ref.kind === 'route' && !routeNames.has(ref.value)) {
-        // Outside "Where it lives", a *Route name may be a Flutter class (MaterialPageRoute): prose.
-        if (ref.section === ROUTES_SECTION) {
+        // Outside "Where it lives" a *Route name may be a Flutter class, and anywhere a *Tab name
+        // may be a widget (DiaryTab): prose, unless the router registers it.
+        if (ref.section === ROUTES_SECTION && ref.value.endsWith('Route')) {
           problems.push(finding(name, ref.line, 'missing-route', ref.value, `App route ${ref.value} not found`));
         }
         continue;
