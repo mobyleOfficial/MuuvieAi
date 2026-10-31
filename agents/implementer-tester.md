@@ -44,6 +44,7 @@ Before writing any code, read these in order:
 6. **rules/localization.md** — ARB workflow for multi-language strings
 7. **rules/accessibility.md** — WCAG AA contrast, semantic labels, 48×48dp touch targets
 8. **rules/variable-naming.md** — Descriptive names, arrow syntax, no abbreviations
+9. **The feature-map page** for every feature you touch — `.claude/skills/muuvie-feature-map/features/README.md` indexes them. It names the routes, screens, BLoCs, datasources and backend endpoints involved, and the behaviour users rely on.
 
 If any rule conflicts with the spec, **stop and ask**. Do not silently deviate.
 
@@ -169,5 +170,6 @@ muuvie/test/ui/<module>/{pages,controllers}/
 4. Implement in dependency order: domain → data → DI → UI → routes → tests
 5. Use scaffolding commands (`/new-*`) wherever applicable
 6. Run `flutter analyze` and `flutter test` to verify everything works
+7. In your final report, list the feature-map pages your change makes untrue (new or renamed routes, changed labels, states, rules or endpoints). The map lives in the meta-repo, not in `muuvie/`; it is updated in the meta-repo PR that bumps the submodule ref (`rules/common/FEATURE_MAP.md`).
 
 If analysis or tests fail, fix the cited issues before considering work done.

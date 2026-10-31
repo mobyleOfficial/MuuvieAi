@@ -24,6 +24,7 @@ Project-level hooks defined in `.claude/settings.json`:
 | `PreToolUse` Bash | `.claude/hooks/check-python-env.sh` | Blocks `pip` / `uv pip` / `poetry` / `conda install` outside an active virtualenv |
 | `PreToolUse` Bash | `.claude/hooks/check-submodule-ai.sh` | Blocks `git commit` / `git push` when submodule contains AI-tooling files |
 | `PreToolUse` Bash | `.claude/hooks/check-docs-sync.sh` | Blocks `gh pr create` / `git push` when critical files change without a doc update |
+| `PreToolUse` Bash | `.claude/hooks/check-feature-map.sh` | Blocks `gh pr create` / `git push` when a branch moving a submodule ref or editing the feature map leaves `feature-map-check --strict` failing |
 | `PostToolUse` Edit/Write | `.claude/hooks/format-code.sh` | Runs `dart format` on `.dart` files (no-op on others) |
 
 Per-agent hooks (defined in pipeline-agent frontmatter): `validate-spec.sh`, `validate-implementation.sh`, `validate-localization.sh`, `validate-module-structure.sh`, `verify-di-registration.sh`, `regenerate-generated-files.sh`, `pipeline-coordinator.sh`, `human-gate-review.sh`, `enforce-path-restrictions.sh`, `block-cross-feature-data-imports.sh`. All live in `.claude/hooks/`.
@@ -65,6 +66,7 @@ The following skills should be invoked proactively when their trigger fits. Skil
 
 - `/muuvie-research-format` — when writing or editing research docs in `research/`.
 - `/setting-up-linear-mcp` — when configuring Linear MCP for the first time or rotating tokens.
+- `/muuvie-feature-map` — before changing, reviewing, verifying or explaining a Muuvie feature, or locating where a screen or endpoint lives in either submodule.
 
 Note: docs-sync is now hook-enforced (`.claude/hooks/check-docs-sync.sh` blocks `gh pr create` / `git push` when public-surface changes lack matching doc updates), so `/verify-docs-before-pr` does not need to be called proactively. It remains available as a manual pre-flight self-check.
 

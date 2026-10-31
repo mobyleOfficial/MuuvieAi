@@ -10,6 +10,7 @@ Custom Claude agents for specialized tasks in the MuuvieAi ecosystem. These form
 - **backend-implementer** — Kotlin/Ktor implementer that builds backend features in the backend submodule with full test coverage
 - **code-reviewer** — Code review specialist that validates code quality across muuvie and backend submodules
 - **validator** — Strict read-only validator that catches issues before merge
+- **feature-mapper** — Writes and repairs pages of the Muuvie feature map (`.claude/skills/muuvie-feature-map/`), tracing each feature through both submodules; dispatched by `/map-features` and `ultimate-developer`
 
 ## Pipeline Usage
 

@@ -4,6 +4,7 @@ Project-level Claude Code skills for the MuuvieAi ecosystem. Each subdirectory h
 
 ## Available Skills
 
+- **`muuvie-feature-map`** — Map of every user-facing Muuvie feature across both submodules (route, screen, BLoC, datasource, endpoint, use case), with the `feature-map-check` CLI that keeps it true. Maintained by the `feature-mapper` agent and `/map-features`.
 - **`muuvie-research-format`** — Standardized format for design docs, architecture decisions, and research documentation.
 - **`setting-up-linear-mcp`** — Configure Linear MCP at project level with secure token storage.
 - **`verify-docs-before-pr`** — Documentation verification before PR creation.

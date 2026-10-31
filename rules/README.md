@@ -13,6 +13,7 @@ These rules fire automatically on every applicable action.
 | [PYTHON_ENVS](common/PYTHON_ENVS.md) | `.claude/hooks/check-python-env.sh` | `PreToolUse` Bash — blocks `pip` / `uv` / `poetry` / `conda install` outside an active venv |
 | [AI_AGNOSTIC_SUBMODULES](common/AI_AGNOSTIC_SUBMODULES.md) | `.claude/hooks/check-submodule-ai.sh` | `PreToolUse` Bash — blocks `git commit` / `git push` when submodule contains `.claude/`, `CLAUDE.md`, `.cursorrules`, copilot instructions, or `AGENTS.md` |
 | [DOCS_UP_TO_DATE](common/DOCS_UP_TO_DATE.md) | `.claude/hooks/check-docs-sync.sh` | `PreToolUse` Bash — blocks `gh pr create` / `git push` when critical files change without a doc update |
+| [FEATURE_MAP](common/FEATURE_MAP.md) | `.claude/hooks/check-feature-map.sh` | `PreToolUse` Bash — blocks `gh pr create` / `git push` when a branch moving a submodule ref or editing the feature map leaves `feature-map-check --strict` failing |
 
 ## Flutter / Submodule-scoped Rules (per-agent enforcement)
 

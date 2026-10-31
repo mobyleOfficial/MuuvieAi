@@ -72,6 +72,10 @@
         {
           "type": "command",
           "command": "./.claude/hooks/check-docs-sync.sh"
+        },
+        {
+          "type": "command",
+          "command": "./.claude/hooks/check-feature-map.sh"
         }
       ]
     }],
