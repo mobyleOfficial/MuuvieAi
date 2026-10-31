@@ -122,7 +122,7 @@ scan_kotlin() {
         next
       }
 
-      if (!active && !pending && line ~ /(^|[^A-Za-z0-9_])suspend[ \t]+fun([ \t]|$)/) {
+      if (!active && !pending && line ~ /(^|[^A-Za-z0-9_])suspend([ \t]+(operator|inline|infix|override|open|final|abstract|tailrec|external|actual|expect|private|public|internal|protected))*[ \t]+fun([ \t]|$)/) {
         pending = 1; start = depth; parens = 0
       }
       in_suspend = active || pending

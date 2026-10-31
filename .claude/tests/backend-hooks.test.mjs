@@ -322,6 +322,15 @@ test('kotlin: Thread.sleep inside a suspend function or in routing is blocked', 
   expectBlocked(KOTLIN, r2, 'MoviesRouting.kt:12', 'routing');
 });
 
+test('kotlin: modifiers between suspend and fun (operator, inline, override …) still count', () => {
+  // The common use case shape — found by a live run, where the check missed it.
+  for (const signature of ['suspend operator fun invoke()', 'suspend inline fun run()', 'suspend override fun load()', 'override suspend fun load()', 'private suspend fun load()']) {
+    const { root, backend } = fixture();
+    write(backend, `${M}/domain/usecase/movies/Sleepy.kt`, `package org.mobyle.domain.usecase.movies\n\nclass Sleepy {\n    ${signature} {\n        Thread.sleep(10)\n    }\n}\n`);
+    expectBlocked(KOTLIN, root, 'Sleepy.kt:5', 'delay()');
+  }
+});
+
 test('kotlin: suspend tracking follows multi-line signatures and expression bodies', () => {
   const { root, backend } = fixture();
   write(backend, `${M}/data/service/Poller.kt`, `package org.mobyle.data.service
