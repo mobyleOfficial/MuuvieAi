@@ -1,0 +1,12 @@
+{
+  "name": "muuvie-feature-map",
+  "private": true,
+  "type": "module",
+  "description": "Checks the Muuvie feature map against the backend and app submodules",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
