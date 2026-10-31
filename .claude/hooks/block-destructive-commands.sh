@@ -192,7 +192,7 @@ check_text() {
   # is decided on the quote-stripped text, where prose is blanked; its payload is
   # then read from the text with quotes intact.
   local shell_c='(ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*'
-  printf '%s\n' "$text" | grep -qE "(^|[[:space:]/])(${shell_c}|eval)([[:space:]]|\$)" || return 0
+  printf '%s\n' "$text" | grep -qE "(^|[[:space:];&|(){}\`/])(${shell_c}|eval)([[:space:]]|\$)" || return 0
 
   # `bash -c "$(curl …)"` runs a download.
   if printf '%s\n' "$nohd" | grep -qE "${shell_c}[[:space:]]+[\"']?\\\$\\((curl|wget)"; then

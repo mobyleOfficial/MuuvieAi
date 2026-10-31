@@ -75,7 +75,8 @@ strip_heredocs() {
 # `git commit -m ""`. Inside "…", a $(…) or `…` command substitution still
 # runs, so its (stripped) body is checked too: bodies are printed after the
 # whole command, on their own lines, so the command around them stays intact
-# (`git push origin "$(…)" --force` keeps its --force).
+# (`git push origin "$(…)" --force` keeps its --force). Unquoted substitutions
+# are handled the same way, leaving the placeholder word SUBST in their place.
 # Escapes outside quotes (don\'t) are honoured. Fails closed: from an
 # unterminated quote on, the text is kept as-is rather than hidden.
 strip_quotes() {
@@ -102,6 +103,19 @@ strip_quotes() {
         if (c == "#" && (i == 1 || substr(s, i - 1, 1) ~ /[ \t\n;&|(]/)) {
           j = index(substr(s, i), "\n"); if (j == 0) break
           i += j - 1; continue
+        }
+        # Unquoted $(…) / `…`: one placeholder word, body checked after the command.
+        if (c == "$" && substr(s, i + 1, 1) == "(" && substr(s, i + 2, 1) != "(") {
+          e = close_paren(s, i + 2)
+          if (e == 0) return out substr(s, i)
+          inner = strip(substr(s, i + 2, e - i - 2)); subs = subs "\n" inner
+          out = out "SUBST"; i = e + 1; continue
+        }
+        if (c == "`") {
+          e = index(substr(s, i + 1), "`")
+          if (e == 0) return out substr(s, i)
+          inner = strip(substr(s, i + 1, e - 1)); subs = subs "\n" inner
+          out = out "SUBST"; i += e + 1; continue
         }
         if (c == "$" && substr(s, i + 1, 1) == "\047") {
           k = i + 2
