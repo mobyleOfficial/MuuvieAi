@@ -21,9 +21,10 @@ hook_read_input() {
   [ -d "$HOOK_CWD" ] || HOOK_CWD=$PWD
 }
 
-# Drops heredoc bodies (data, not commands). A here-string (<<<) is not a
-# heredoc. The terminator may be followed by `)` or quotes, as in
-# "$(cat <<'EOF' ... EOF)".
+# Drops heredoc bodies (data, not commands). Tracks quotes and comments, so
+# `python3 -c "print(1 << n)"` or `echo 'a << EOF'` is not a heredoc, and a
+# here-string (<<<) is not one either. The terminator may be followed by `)`
+# or quotes, as in "$(cat <<'EOF' ... EOF)".
 strip_heredocs() {
   printf '%s\n' "$1" | awk '
     in_doc {
@@ -35,33 +36,55 @@ strip_heredocs() {
     }
     {
       print
-      if (match($0, /(^|[^<])<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
-        tag = substr($0, RSTART, RLENGTH)
-        sub(/^[^<]*<<-?[ \t]*/, "", tag)
-        gsub(/["\047]/, "", tag)
-        in_doc = 1
+      n = length($0); i = 1
+      while (i <= n) {
+        c = substr($0, i, 1)
+        if (q != "") {
+          if (c == "\\" && q == "\"") { i += 2; continue }
+          # "$(…)" opens an unquoted context inside double quotes.
+          if (q == "\"" && substr($0, i, 2) == "$(") { stack = stack "\""; q = ""; i += 2; continue }
+          if (c == q) q = ""
+          i++; continue
+        }
+        if (c == ")" && substr(stack, length(stack)) == "\"") { stack = substr(stack, 1, length(stack) - 1); q = "\""; i++; continue }
+        if (c == "\047" || c == "\"") { q = c; i++; continue }
+        if (c == "#" && (i == 1 || substr($0, i - 1, 1) ~ /[ \t;&|(]/)) break
+        if (substr($0, i, 2) == "<<" && substr($0, i + 2, 1) != "<" && (i == 1 || substr($0, i - 1, 1) != "<")) {
+          rest = substr($0, i + 2)
+          sub(/^-?[ \t]*/, "", rest)
+          if (match(rest, /^["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
+            tag = substr(rest, RSTART, RLENGTH)
+            gsub(/["\047]/, "", tag)
+            in_doc = 1
+            break
+          }
+        }
+        i++
       }
     }'
 }
 
-# Empties quoted strings ('…' and "…", with backslash escapes in "…"), keeping
-# the quotes so word positions survive: `git commit -m "never push --force"`
-# becomes `git commit -m ""`.
+# Joins backslash-newline continuations, then empties quoted strings ('…' and
+# "…", escapes honoured, spanning lines), keeping the quotes so word positions
+# survive: `git commit -m "never push --force"` becomes `git commit -m ""`.
 strip_quotes() {
   printf '%s\n' "$1" | awk '
-    {
-      out = ""; n = length($0); i = 1
+    { buf = buf $0 "\n" }
+    END {
+      gsub(/\\\n/, " ", buf)
+      out = ""; n = length(buf); i = 1
       while (i <= n) {
-        c = substr($0, i, 1)
+        c = substr(buf, i, 1)
         if (c == "\047") {
-          j = index(substr($0, i + 1), "\047")
-          if (j == 0) { out = out "\047\047"; break }
-          out = out "\047\047"; i += j + 1; continue
+          j = index(substr(buf, i + 1), "\047")
+          out = out "\047\047"
+          if (j == 0) break
+          i += j + 1; continue
         }
         if (c == "\"") {
           k = i + 1
           while (k <= n) {
-            d = substr($0, k, 1)
+            d = substr(buf, k, 1)
             if (d == "\\") { k += 2; continue }
             if (d == "\"") break
             k++
@@ -70,6 +93,7 @@ strip_quotes() {
         }
         out = out c; i++
       }
+      sub(/\n$/, "", out)
       print out
     }'
 }
@@ -80,8 +104,9 @@ executable_text() {
 }
 
 # One simple command per line: splits on ; && || | & ( ) newlines, backticks
-# and $( — then trims leading whitespace and VAR=value prefixes. Feed it
-# executable_text output.
+# and $( — then peels what precedes the command word: whitespace, shell
+# keywords (then, do, if, while, …), braces, `!`, `env` and VAR=value
+# assignments. Feed it executable_text output.
 command_segments() {
   printf '%s\n' "$1" | awk '
     {
@@ -91,7 +116,12 @@ command_segments() {
     }' | awk '
     {
       sub(/^[ \t]+/, ""); sub(/[ \t]+$/, "")
-      while (match($0, /^[A-Za-z_][A-Za-z0-9_]*=[^ \t]*[ \t]+/)) $0 = substr($0, RLENGTH + 1)
+      do {
+        changed = 0
+        if (match($0, /^(then|do|else|elif|if|while|until|time|!|\{|\})([ \t]+|$)/)) { $0 = substr($0, RLENGTH + 1); changed = 1 }
+        if (match($0, /^env([ \t]+-[^ \t]+)*[ \t]+/)) { $0 = substr($0, RLENGTH + 1); changed = 1 }
+        if (match($0, /^[A-Za-z_][A-Za-z0-9_]*=[^ \t]*([ \t]+|$)/)) { $0 = substr($0, RLENGTH + 1); changed = 1 }
+      } while (changed)
       if ($0 != "") print
     }'
 }

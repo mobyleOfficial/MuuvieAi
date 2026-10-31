@@ -32,7 +32,10 @@ if [ ! -f "$review_file" ]; then
   exit 2
 fi
 
-decision=$(grep -E "^Decision:[[:space:]]+(APPROVED|REJECTED)" "$review_file" | awk '{print $2}' | head -n 1)
+# The first "Decision" line, in the form architect-review writes
+# ("- **Decision:** APPROVED_WITH_CONDITIONS") or the plain "Decision: APPROVED".
+decision=$(grep -iE '^[[:space:]]*(-[[:space:]]*)?(\*\*)?Decision' "$review_file" | head -n 1 |
+  grep -oE 'APPROVED_WITH_CONDITIONS|APPROVED|REJECTED' | head -n 1)
 
 if [ "$decision" = "REJECTED" ]; then
   echo "Blocked: architect rejected the design" >&2
@@ -40,8 +43,12 @@ if [ "$decision" = "REJECTED" ]; then
   exit 2
 fi
 
-if [ "$decision" = "APPROVED" ]; then
-  echo "Architect approved the design."
+if [ "$decision" = "APPROVED" ] || [ "$decision" = "APPROVED_WITH_CONDITIONS" ]; then
+  if [ "$decision" = "APPROVED_WITH_CONDITIONS" ]; then
+    echo "Architect approved the design, with conditions — read them in the review before implementing."
+  else
+    echo "Architect approved the design."
+  fi
   echo ""
   echo "------------------------------------------------------------"
   echo "HUMAN GATE: review the approval before implementation starts"
@@ -57,5 +64,5 @@ if [ "$decision" = "APPROVED" ]; then
 fi
 
 echo "Blocked: review decision is missing or unrecognized" >&2
-echo "Expected a line like 'Decision: APPROVED' or 'Decision: REJECTED' in $review_file." >&2
+echo "Expected a line like '- **Decision:** APPROVED' (or APPROVED_WITH_CONDITIONS / REJECTED) in $review_file." >&2
 exit 2

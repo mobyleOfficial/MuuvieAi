@@ -73,7 +73,7 @@ ls -la muuvie/CLAUDE.md
 ls -la backend/CLAUDE.md
 
 # Tracked AI tooling at any depth, archives included — the hook's own pattern
-git -C muuvie ls-files | grep -E '(^|/)(\.claude([/.]|$)|CLAUDE\.md$|\.cursorrules$|AGENTS\.md$|\.github/copilot-instructions\.md$)'
+git -C muuvie ls-files | grep -E '(^|/)(\.claude([/.]|$)|CLAUDE\.md$|GEMINI\.md$|AGENTS\.md$|AI_SETUP\.md$|\.cursorrules$|\.copilot(/|$)|\.github/copilot-instructions\.md$)'
 ```
 
 ## When a Submodule Needs AI Documentation

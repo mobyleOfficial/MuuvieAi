@@ -220,7 +220,7 @@ Pre/Post/SessionStart hooks wired in `.claude/settings.json`. Flat directory —
 - `pm-spec`: `validate-spec.sh`; `architect-review`: `human-gate-review.sh`
 - Run by hand: `pipeline-coordinator.sh <agent>` (manual queue), `validate-audit-only.sh` (used by `ultimate-developer`)
 
-`lib-hook.sh` holds the helpers every hook sources. Tests: `npm run test:hooks` runs each hook under macOS's bash 3.2 with crafted hook JSON.
+`lib-hook.sh` holds the shared helpers (the Bash-command, queue and backend hooks source it). Tests: `npm run test:hooks` runs each hook under macOS's bash 3.2 with crafted hook JSON.
 
 ---
 

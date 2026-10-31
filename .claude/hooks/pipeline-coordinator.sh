@@ -2,9 +2,11 @@
 # .claude/hooks/pipeline-coordinator.sh
 # Advances the manual pipeline queue (.claude/task/pipeline-queue.json) when a
 # pipeline agent finishes its stage, and names the next agent to run.
-# Declared as a Stop hook in each queue-pipeline agent's frontmatter, with the
-# agent's own name as the argument:
-#   command: "./.claude/hooks/pipeline-coordinator.sh pm-spec"
+# Run by hand once a stage is accepted, with the agent whose stage it was:
+#   echo '{}' | .claude/hooks/pipeline-coordinator.sh pm-spec
+# Deliberately NOT wired as a frontmatter Stop hook: Claude Code runs an
+# event's hooks in parallel, so it could advance a stage that a gate in the
+# same event (validate-spec, human-gate-review) is blocking.
 #
 # Only the in-progress stage owned by that agent is completed, so a pipeline
 # agent invoked for something else (e.g. architect-review dispatched by

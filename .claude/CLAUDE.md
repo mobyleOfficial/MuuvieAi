@@ -27,7 +27,7 @@ Project-level hooks defined in `.claude/settings.json`:
 | `PreToolUse` Bash | `.claude/hooks/check-feature-map.sh` | Blocks `gh pr create` / `git push` when a branch moving a submodule ref or editing the feature map leaves `feature-map-check --strict` failing |
 | `PostToolUse` Edit/Write | `.claude/hooks/format-code.sh` | Runs `dart format` on `.dart` files (no-op on others) |
 
-Per-agent hooks are declared in the `hooks:` frontmatter of `.claude/agents/{implementer-tester,backend-implementer,pm-spec,architect-review}.md` and run only while that agent is active. See [`.claude/hooks/README.md` § 2](hooks/README.md) for the table, and for the scripts that are run by hand (`pipeline-coordinator.sh`, `validate-audit-only.sh`). All hooks source `.claude/hooks/lib-hook.sh` and are tested by `npm run test:hooks`.
+Per-agent hooks are declared in the `hooks:` frontmatter of `.claude/agents/{implementer-tester,backend-implementer,pm-spec,architect-review}.md` and run only while that agent is active. See [`.claude/hooks/README.md` § 2](hooks/README.md) for the table, and for the scripts that are run by hand (`pipeline-coordinator.sh`, `validate-audit-only.sh`). The Bash-command hooks, the queue hooks and the backend hooks source the shared helpers in `.claude/hooks/lib-hook.sh`; every hook is tested by `npm run test:hooks`.
 
 ## Subagent Dispatch
 
