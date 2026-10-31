@@ -1,44 +1,41 @@
 #!/bin/bash
 # .claude/hooks/check-python-env.sh
-# Blocks `pip install` (or equivalents) outside a virtualenv.
-# Enforces rules/PYTHON_ENVS.md.
-# Register as PreToolUse hook on the Bash tool in .claude/settings.json.
+# Blocks Python package installs that would land outside a project virtualenv.
+# Enforces rules/common/PYTHON_ENVS.md.
+# Registered as a PreToolUse hook on the Bash tool in .claude/settings.json.
+#
+# The Bash tool keeps no environment between calls, so "activate, then install"
+# has to happen in one command — that counts as in a venv. So do a venv's own
+# binaries (.venv/bin/pip), uv (it refuses to install outside a venv unless told
+# --system) and poetry (it manages its own venv). Mentions in messages, quotes
+# and heredocs don't count. Tests: .claude/tests/command-hooks.test.mjs.
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+[ -z "$HOOK_COMMAND" ] && exit 0
 
-input=$(cat)
-command=$(echo "$input" | jq -r '.tool_input.command // empty')
+text=$(executable_text "$HOOK_COMMAND")
+segments=$(command_segments "$text")
 
-if [ -z "$command" ]; then
-  exit 0
+violation=""
+if printf '%s\n' "$segments" | grep -qE -- '--break-system-packages'; then
+  violation="--break-system-packages installs into the system Python"
+elif printf '%s\n' "$segments" | grep -qE '^uv[[:space:]]+pip[[:space:]]+install([[:space:]].*)?[[:space:]]--system([[:space:]]|$)'; then
+  violation="uv pip install --system installs into the system Python"
+elif printf '%s\n' "$segments" | grep -qE '^(pip[0-9.]*|python[0-9.]*[[:space:]]+-m[[:space:]]+pip|conda)[[:space:]]+install([[:space:]]|$)'; then
+  # A bare pip / python -m pip / conda install: fine only inside an environment.
+  if [ -n "${VIRTUAL_ENV:-}" ] || [ -n "${CONDA_PREFIX:-}" ] || [ -n "${POETRY_ACTIVE:-}" ]; then
+    exit 0
+  fi
+  if printf '%s\n' "$segments" | grep -qE '^((source|\.)[[:space:]]+[^[:space:]]*bin/activate|conda[[:space:]]+activate)([[:space:]]|$)'; then
+    exit 0
+  fi
+  violation="install command outside an active virtualenv"
 fi
 
-# Match an actual `pip install` (or equivalent) invocation. Anchored to
-# start-of-command, post-chain-operator, or post-env-var-prefix so that
-# quoted strings inside echo/printf do not trip the check. Forms matched:
-#   pip install ...        pip3 install ...
-#   python -m pip install  python3 -m pip install
-#   uv pip install         uv install (legacy)
-#   poetry install         conda install
-# uvx and `uv tool run` are skipped — they invoke transient tools, not env installs.
-INSTALL_PATTERN='(^|[;&|][[:space:]]*)([A-Z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*(python3?[[:space:]]+-m[[:space:]]+pip|pip3?|uv([[:space:]]+pip)?|poetry|conda)[[:space:]]+install'
-UVX_PATTERN='(^|[;&|][[:space:]]*)(uvx|uv[[:space:]]+tool[[:space:]]+run|uv[[:space:]]+run)([[:space:]]|$)'
-
-if ! echo "$command" | grep -qE "$INSTALL_PATTERN"; then
-  exit 0
-fi
-
-# Permit transient uv invocations (uvx / uv tool run / uv run)
-if echo "$command" | grep -qE "$UVX_PATTERN"; then
-  exit 0
-fi
-
-# Permit if a virtualenv is active
-if [ -n "${VIRTUAL_ENV:-}" ] || [ -n "${CONDA_PREFIX:-}" ] || [ -n "${POETRY_ACTIVE:-}" ]; then
-  exit 0
-fi
-
-echo "❌ PYTHON_ENVS rule violation: install command outside an active virtualenv." >&2
-echo "   Activate a venv first: python -m venv .venv && source .venv/bin/activate" >&2
-echo "   See rules/PYTHON_ENVS.md for details." >&2
+[ -z "$violation" ] && exit 0
+echo "❌ PYTHON_ENVS rule violation: $violation." >&2
+echo "   Install inside a project venv, in the same command (the Bash tool keeps no environment):" >&2
+echo "     python3 -m venv .venv && source .venv/bin/activate && pip install …" >&2
+echo "   or call the venv's own pip: .venv/bin/pip install …   See rules/common/PYTHON_ENVS.md." >&2
 exit 2

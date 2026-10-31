@@ -49,7 +49,7 @@ One minor codebase discrepancy to flag for the implementer (does not block appro
 
 ### 4. Security & Privacy
 
-- Share payload is `https://moovie.app/reviews/<reviewId>` text. No tokens, no PII beyond the public author display name. Deep link routing is correctly deferred (line 255).
+- Share payload is `https://muuvie.app/reviews/<reviewId>` text. No tokens, no PII beyond the public author display name. Deep link routing is correctly deferred (line 255).
 - v1 always shows the like button; auth gating deferred (line 256) — acceptable per #10 of the prior review.
 - No new persisted user data beyond the in-memory `_likedReviewIds` set on the mock data source.
 

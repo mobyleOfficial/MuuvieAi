@@ -82,7 +82,7 @@ Create inside `ui/movies_ui/lib/watch_list/` following the `FavoriteMoviesScreen
 **Files to create:**
 - `watch_list_state.dart` — sealed class: Loading, Success, Error
 - `watch_list_bloc.dart` — `WatchListCubit` with `PagingController<int, Movie>`
-- `watch_list_screen.dart` — `WatchListScreen` with `PagedGridView` + `MoovieMoviePosterCard`
+- `watch_list_screen.dart` — `WatchListScreen` with `PagedGridView` + `MuuvieMoviePosterCard`
 - `watch_list_page.dart` — `@RoutePage()`, params: `userId`, `userName?`, AppBar: `"$userName — Watch List"` or `"Watch List"`, localized via `profileWatchlistSection`
 - `watch_list_router.dart` — `@AutoRouterConfig` with `part` directive
 

@@ -1,7 +1,7 @@
 {
-  "name": "@moovie/repo-management",
+  "name": "@muuvie/repo-management",
   "version": "1.2.0",
-  "description": "MCP server for managing Moovie ecosystem repositories",
+  "description": "MCP server for managing Muuvie ecosystem repositories",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

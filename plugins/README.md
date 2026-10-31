@@ -5,7 +5,7 @@ Claude Code plugins and MCP (Model Context Protocol) servers to extend Claude's 
 ## Available Plugins
 
 ### repo-management
-Git and repository management for Moovie ecosystem. Handles submodule syncing, branch creation, PR management.
+Git and repository management for Muuvie ecosystem. Handles submodule syncing, branch creation, PR management.
 
 **Tools:**
 - `sync-submodule` — Update submodule to latest remote

@@ -7,22 +7,22 @@ related:
 tags: [api, versioning, backend, architecture]
 ---
 
-# API Versioning Strategy for MoovieBackend
+# API Versioning Strategy for MuuvieBackend
 
 ## Executive Summary
 
-MoovieBackend currently exposes an unversioned API that will require versioning as the Moovie ecosystem scales and the backend evolves. URI path versioning (`/api/v1/`, `/api/v2/`) is recommended: it is the industry standard [Source: https://google.aip.dev/versioning, https://stripe.com/docs/api/versioning], most discoverable in documentation and logs, and minimally impacts the frontend (URL configuration only). This strategy enables backward compatibility with existing clients (Flutter frontend) while supporting future breaking changes without coordination issues.
+MuuvieBackend currently exposes an unversioned API that will require versioning as the Muuvie ecosystem scales and the backend evolves. URI path versioning (`/api/v1/`, `/api/v2/`) is recommended: it is the industry standard [Source: https://google.aip.dev/versioning, https://stripe.com/docs/api/versioning], most discoverable in documentation and logs, and minimally impacts the frontend (URL configuration only). This strategy enables backward compatibility with existing clients (Flutter frontend) while supporting future breaking changes without coordination issues.
 
 ## Problem Statement
 
-MoovieBackend [Source: observed in backend/routes.kt] currently serves unversioned endpoints (e.g., `/movies/trending`, `/profile`, `/activities/{userId}`). As the product scales:
+MuuvieBackend [Source: observed in backend/routes.kt] currently serves unversioned endpoints (e.g., `/movies/trending`, `/profile`, `/activities/{userId}`). As the product scales:
 
 1. Breaking changes require coordinated frontend/backend deployments, increasing deployment risk
 2. Multiple client versions cannot coexist simultaneously
 3. Feature deprecation and gradual migration are impossible
 4. A/B testing across API versions is unsupported
 
-The Kotlin/Ktor 2.3.0 backend [Source: backend/build.gradle.kts] is organized into three routing modules (`MoviesRouting.kt`, `ProfileRouting.kt`, `ActivitiesRouting.kt`) [Source: observed in backend/ directory], and the Flutter frontend uses a repository pattern that abstracts the HTTP layer [Source: observed in moovie/lib/data/repositories/], making version-aware client implementation feasible without UI changes.
+The Kotlin/Ktor 2.3.0 backend [Source: backend/build.gradle.kts] is organized into three routing modules (`MoviesRouting.kt`, `ProfileRouting.kt`, `ActivitiesRouting.kt`) [Source: observed in backend/ directory], and the Flutter frontend uses a repository pattern that abstracts the HTTP layer [Source: observed in muuvie/lib/data/repositories/], making version-aware client implementation feasible without UI changes.
 
 This research identifies the optimal versioning strategy and implementation plan.
 
@@ -112,7 +112,7 @@ fun Route.getMoviesRouting() {
 
 ### Option 4: Content Negotiation / Media Type Versioning
 
-**Description**: Version via `Accept` header media type (e.g., `application/vnd.moovie.v1+json`).
+**Description**: Version via `Accept` header media type (e.g., `application/vnd.muuvie.v1+json`).
 
 ```kotlin
 fun Route.getMoviesRouting() {
@@ -131,7 +131,7 @@ fun Route.getMoviesRouting() {
 - Client testing is harder (requires header manipulation) [Source: Analysis: developer experience impact]
 - Not standard in the industry for API versioning [Source: https://google.aip.dev/versioning, https://stripe.com/docs/api/versioning]
 
-**Verdict**: Overly complex for Moovie's use case. Prefer simpler, industry-standard approaches.
+**Verdict**: Overly complex for Muuvie's use case. Prefer simpler, industry-standard approaches.
 
 ---
 
@@ -216,7 +216,7 @@ fun Application.configureRouting() {
 }
 ```
 
-2. **Update frontend client** [Source: moovie/lib/di/http_di_module.dart] to target `/api/v1/` base URL:
+2. **Update frontend client** [Source: muuvie/lib/di/http_di_module.dart] to target `/api/v1/` base URL:
 ```dart
 @singleton
 @Named('backend')
@@ -233,7 +233,7 @@ Dio get backendDio => Dio(
 # research/api-v1-spec.yaml
 openapi: 3.0.0
 info:
-  title: MoovieBackend API
+  title: MuuvieBackend API
   version: 1.0.0
   deprecated: false
 paths:

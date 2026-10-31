@@ -1,6 +1,6 @@
 # Research & Documentation
 
-Central hub for design documents, architecture decisions, feature specifications, and analysis across the MoovieAi ecosystem.
+Central hub for design documents, architecture decisions, feature specifications, and analysis across the MuuvieAi ecosystem.
 
 ## Directory Structure
 

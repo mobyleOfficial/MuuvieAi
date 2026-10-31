@@ -1,92 +1,91 @@
 #!/bin/bash
 # .claude/hooks/check-submodule-ai.sh
-# Blocks `git commit` and `git push` (in the meta-repo) when an operation
-# actually involves a submodule that contains AI-tooling files. Enforces
-# rules/AI_AGNOSTIC_SUBMODULES.md.
+# Blocks `git commit` / `git push` when the operation involves a submodule
+# (muuvie, backend) whose tracked files include AI tooling. Enforces
+# rules/common/AI_AGNOSTIC_SUBMODULES.md.
+# Registered as a PreToolUse hook on the Bash tool in .claude/settings.json.
 #
-# Scoping: do not block every unrelated meta-repo commit. Only block if:
-#   - the staged change set or the operation's pathspec includes
-#     moovie/ or backend/, AND
-#   - that submodule's TRACKED files include any AI-tooling path.
-#
-# Why tracked-only: a leftover .claude/ in a submodule working tree that
-# isn't committed is not a rule violation — submodules must be AI-agnostic
-# in their git history, not on every contributor's disk.
+# A submodule is involved when:
+#   - the session is inside it, or the command cd's / `git -C`s into it, or
+#   - the meta-repo operation carries a change to it: staged, unstaged, or
+#     committed since the upstream (or since origin/dev when there is none yet,
+#     as on a branch's first push).
+# Tracked files only: an untracked leftover on someone's disk isn't in history.
+# Tests: .claude/tests/command-hooks.test.mjs.
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+[ -z "$HOOK_COMMAND" ] && exit 0
 
-input=$(cat)
-command=$(echo "$input" | jq -r '.tool_input.command // empty')
+text=$(executable_text "$HOOK_COMMAND")
+runs_git "$text" 'commit|push' || exit 0
 
-if [ -z "$command" ]; then
-  exit 0
-fi
+AI_TOOLING='(^|/)(\.claude([/.]|$)|CLAUDE\.md$|GEMINI\.md$|AGENTS\.md$|AI_SETUP\.md$|\.cursorrules$|\.copilot(/|$)|\.github/copilot-instructions\.md$)'
+SUBMODULES="muuvie backend"
 
-# Anchor: actual `git commit` or `git push` invocation, not a quoted string.
-COMMIT_PATTERN='(^|[;&|][[:space:]]*)([A-Z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*git[[:space:]]+(commit|push)'
-if ! echo "$command" | grep -qE "$COMMIT_PATTERN"; then
-  exit 0
-fi
+toplevel=$(git -C "$HOOK_CWD" rev-parse --show-toplevel 2>/dev/null) || exit 0
+super=$(git -C "$toplevel" rev-parse --show-superproject-working-tree 2>/dev/null)
+meta=${super:-$toplevel}
 
-repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-cd "$repo_root" 2>/dev/null || exit 0
-
-# Determine which submodules are involved in THIS operation.
-# Sources of involvement:
-#   1. Currently staged files (any path under moovie/ or backend/)
-#   2. Currently unstaged-but-modified files (will be picked up by git add -A)
-#   3. Already-committed-but-unpushed files reachable from HEAD but not from
-#      the upstream tracking branch. Without this, `git push` of a clean
-#      working tree whose commits include a submodule pointer bump would
-#      bypass the check entirely.
 involved=""
-staged=$(git diff --cached --name-only 2>/dev/null || true)
-unstaged=$(git diff --name-only 2>/dev/null || true)
+add_involved() { case " $involved " in *" $1 "*) ;; *) involved="$involved $1" ;; esac; }
 
-# Unpushed commits — only meaningful when an upstream is set. `@{u}` resolves
-# to the tracking branch; failure (no upstream / detached) is silently empty.
-unpushed=""
-if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
-  unpushed=$(git diff --name-only '@{u}'..HEAD 2>/dev/null || true)
+# The session sits inside a submodule.
+if [ -n "$super" ]; then
+  add_involved "${toplevel#"$super"/}"
 fi
 
-combined=$(printf '%s\n%s\n%s\n' "$staged" "$unstaged" "$unpushed")
-
-for submodule in moovie backend; do
-  if echo "$combined" | grep -qE "^${submodule}(/|$)"; then
-    involved+="$submodule "
-  fi
+# The command cd's / git -C's into a submodule.
+for sub in $SUBMODULES; do
+  [ -d "$meta/$sub" ] || continue
+  sub_top=$(git -C "$meta/$sub" rev-parse --show-toplevel 2>/dev/null) || continue
+  [ "$sub_top" = "$meta" ] && continue
+  targets=$(printf '%s\n' "$HOOK_COMMAND" | grep -oE "(cd|git[[:space:]]+-C)[[:space:]]+(\"[^\"]*\"|'[^']*'|[^[:space:];&|)]+)" |
+    sed -E "s/^(cd|git[[:space:]]+-C)[[:space:]]+//; s/^[\"']//; s/[\"']\$//")
+  while IFS= read -r target; do
+    [ -z "$target" ] && continue
+    top=$(git -C "$HOOK_CWD" -C "$target" rev-parse --show-toplevel 2>/dev/null) || continue
+    [ "$top" = "$sub_top" ] && add_involved "$sub"
+  done <<< "$targets"
 done
 
-# If no submodule is involved in the operation, this hook has nothing to say.
-if [ -z "$involved" ]; then
-  exit 0
+# The meta-repo operation carries a submodule change.
+if [ -z "$super" ]; then
+  changes=$(
+    git -C "$meta" diff --cached --name-only 2>/dev/null
+    git -C "$meta" diff --name-only 2>/dev/null
+    if git -C "$meta" rev-parse --verify --quiet '@{u}' >/dev/null 2>&1; then
+      git -C "$meta" diff --name-only '@{u}...HEAD' 2>/dev/null
+    else
+      for base in origin/dev origin/main; do
+        if git -C "$meta" rev-parse --verify --quiet "$base" >/dev/null; then
+          git -C "$meta" diff --name-only "$base...HEAD" 2>/dev/null
+          break
+        fi
+      done
+    fi
+  )
+  for sub in $SUBMODULES; do
+    printf '%s\n' "$changes" | grep -qE "^${sub}(/|\$)" && add_involved "$sub"
+  done
 fi
+
+[ -z "$involved" ] && exit 0
 
 violations=""
-for submodule in $involved; do
-  [ -d "$submodule" ] || continue
-
-  # List TRACKED files inside the submodule that match AI-tooling paths.
-  # ls-files is git-aware and only returns files in the submodule's index.
-  tracked=$(git -C "$submodule" ls-files 2>/dev/null || true)
-  matches=$(echo "$tracked" | grep -E '^(\.claude/|CLAUDE\.md$|\.cursorrules$|AGENTS\.md$|\.github/copilot-instructions\.md$)' || true)
-
-  if [ -n "$matches" ]; then
-    while IFS= read -r f; do
-      [ -n "$f" ] && violations+="  $submodule/$f"$'\n'
-    done <<< "$matches"
-  fi
+for sub in $involved; do
+  [ -d "$meta/$sub" ] || continue
+  matches=$(git -C "$meta/$sub" ls-files 2>/dev/null | grep -E "$AI_TOOLING")
+  while IFS= read -r f; do
+    [ -n "$f" ] && violations="$violations  $sub/$f"$'\n'
+  done <<< "$matches"
 done
 
-if [ -n "$violations" ]; then
-  echo "❌ AI_AGNOSTIC_SUBMODULES rule violation: submodule contains AI-tooling files (tracked)." >&2
-  echo "" >&2
-  echo "$violations" >&2
-  echo "" >&2
-  echo "   Submodules must remain AI-agnostic. Move AI config to the meta-repo (.claude/, root CLAUDE.md, rules/, etc.)." >&2
-  echo "   See rules/AI_AGNOSTIC_SUBMODULES.md." >&2
-  exit 2
-fi
-
-exit 0
+[ -z "$violations" ] && exit 0
+echo "❌ AI_AGNOSTIC_SUBMODULES rule violation: a submodule tracks AI-tooling files." >&2
+echo "" >&2
+printf '%s' "$violations" >&2
+echo "" >&2
+echo "   Submodules must stay AI-agnostic: remove these from the submodule (git rm), and keep AI config" >&2
+echo "   in the meta-repo (.claude/, root CLAUDE.md, rules/). See rules/common/AI_AGNOSTIC_SUBMODULES.md." >&2
+exit 2

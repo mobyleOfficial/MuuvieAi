@@ -20,7 +20,7 @@ The screen remains read-mostly. Comment authoring, threading, moderation, push n
 - As a user reading a review, I want to see the comments left on the review so that I can read the discussion the review generated.
 - As a user reading a review, I want to see a list of other reviews for the same movie so that I can compare different perspectives on the film.
 - As a user reading a review, I want to see a list of other reviews by the same author so that I can keep reading from a critic whose taste I trust.
-- As a user who enjoyed a review, I want to share it with friends via WhatsApp, Instagram, email or any other installed share target so that I can spread good content outside Moovie.
+- As a user who enjoyed a review, I want to share it with friends via WhatsApp, Instagram, email or any other installed share target so that I can spread good content outside Muuvie.
 
 ## Acceptance Criteria
 
@@ -75,8 +75,8 @@ Each item below is individually testable by widget test, unit test or manual QA.
 10. **Share action.**
     - Given the user taps the share icon in the AppBar, when the action fires, then `ShareService.shareReview(MovieReview review)` is invoked (see Technical Notes — `ShareService` is constructor-injected into the screen via DI).
     - The default `ShareService` implementation calls `SharePlus.instance.share(ShareParams(text: payload))` where the payload is:
-      `"<movieTitle> — <rating>/5 — review by <author> on Moovie\n\n<deeplinkUrl>"`.
-    - `<deeplinkUrl>` is `https://moovie.app/reviews/<reviewId>`. Universal/App Link handling is a separate ticket.
+      `"<movieTitle> — <rating>/5 — review by <author> on Muuvie\n\n<deeplinkUrl>"`.
+    - `<deeplinkUrl>` is `https://muuvie.app/reviews/<reviewId>`. Universal/App Link handling is a separate ticket.
     - The share button has `Tooltip(message: l10n.reviewDetailsShare)` and is announced as a button.
 
 11. **Loading and error — per section, not full screen.**
@@ -84,7 +84,7 @@ Each item below is individually testable by widget test, unit test or manual QA.
     - Once the primary fetch returns `Success`, the cubit emits `ReviewDetailsSuccess` and IMMEDIATELY kicks off the three secondary fetches in parallel via `Future.wait` (comments, other-reviews-for-movie, more-from-author).
     - Each secondary section is modeled as `Result<T>` inside `ReviewDetailsSuccess`: `Result<MovieReviewCommentListing> comments`, `Result<List<MovieReview>> otherReviewsForMovie`, `Result<List<MovieReview>> moreFromAuthor`. The cubit emits a fresh `Success` copy as each secondary `Result` resolves.
     - While a secondary section is in-flight its value is `null` (sentinel — interpreted by the screen as "show inline spinner"). When it resolves to `Failure`, the section shows an inline error placeholder with a retry button that re-invokes the section-specific fetch only.
-    - If the primary `GetReviewDetails` fetch fails, the cubit emits `ReviewDetailsError(message)` and the screen shows the existing `MoovieEmptyState` widget with `actionLabel: l10n.emptyStateRetry` and `action: cubit.reload`. (Reuses the current widget already on file at `review_details_screen.dart:118-125`.)
+    - If the primary `GetReviewDetails` fetch fails, the cubit emits `ReviewDetailsError(message)` and the screen shows the existing `MuuvieEmptyState` widget with `actionLabel: l10n.emptyStateRetry` and `action: cubit.reload`. (Reuses the current widget already on file at `review_details_screen.dart:118-125`.)
 
 12. **Accessibility and contrast.**
     - All new icons (heart, share, navigation chevrons, author avatar) wrap their `Icon` in a `Tooltip` AND set a `semanticLabel`. Decorative containers are wrapped in `ExcludeSemantics`.
@@ -252,7 +252,7 @@ The following are intentionally excluded from this iteration:
 - **Like notifications.** Authors are NOT notified when their review is liked. Push notification infrastructure is a separate workstream.
 - **Real-time / pull-to-refresh.** Like count and comment list are fetched once at screen load. No websocket. No pull-to-refresh gesture.
 - **Sharing as image.** v1 ships text + URL only. Generating a styled review card image for Instagram Story sharing is deferred.
-- **Deep link routing.** This spec defines the URL FORMAT (`https://moovie.app/reviews/{reviewId}`) for the share payload but does NOT implement Universal/App Links handling on launch.
+- **Deep link routing.** This spec defines the URL FORMAT (`https://muuvie.app/reviews/{reviewId}`) for the share payload but does NOT implement Universal/App Links handling on launch.
 - **Real auth gating of the like button.** v1 always shows the like button. There is no auth-state observable in the current DI graph; gating ("hide for unauthenticated") is deferred until auth state is plumbed.
 - **Analytics events.** Instrumentation (`review_liked`, `review_shared`, `review_comment_viewed`, `related_review_tapped`) is desirable but excluded.
 - **Locales beyond en/es/pt.** New strings ship in the three existing locales only.

@@ -12,7 +12,7 @@ decisions:
   - Commands kept, skills/new-* dropped (resolved 2026-05-15)
   - Hooks + task/ moved to .claude/hooks/ and .claude/task/ (resolved 2026-05-15)
   - .claude/CLAUDE.md kept and rewritten as Claude/tooling-specific behavior (resolved 2026-05-15)
-  - moovie-research-format skill updated to allow research subdirs (resolved 2026-05-15)
+  - muuvie-research-format skill updated to allow research subdirs (resolved 2026-05-15)
   - Linear MCP fix folded into Phase 1, not this PR (resolved 2026-05-15)
 ---
 
@@ -20,11 +20,11 @@ decisions:
 
 ## Executive Summary
 
-This audit reviews the `.claude/`, `skills/`, `plugins/`, `rules/`, and `agents/` configuration of the MoovieAi meta-repo against three failure reports from the maintainer: (1) skills are not loading, (2) rules are being ignored, (3) plugin status is unverified. Root cause is a layered configuration mismatch: skills are placed in a non-standard directory shape, MCP servers are declared in two competing files with divergent relative paths, rules exist only as Markdown with one of four enforced by a hook, and no bootstrap script exists to make the repo reproducible after a fresh clone. **Recommendation:** Consolidate to a single MCP config at repo root, restructure `skills/` to match Claude Code's expected plugin-marketplace layout, expand hook coverage so each rule has an enforcement mechanism, and ship a `bootstrap.sh` that installs all dependencies (root `npm install`, plugin build, submodule init, hook permissions, settings.local.json template) in one command.
+This audit reviews the `.claude/`, `skills/`, `plugins/`, `rules/`, and `agents/` configuration of the MuuvieAi meta-repo against three failure reports from the maintainer: (1) skills are not loading, (2) rules are being ignored, (3) plugin status is unverified. Root cause is a layered configuration mismatch: skills are placed in a non-standard directory shape, MCP servers are declared in two competing files with divergent relative paths, rules exist only as Markdown with one of four enforced by a hook, and no bootstrap script exists to make the repo reproducible after a fresh clone. **Recommendation:** Consolidate to a single MCP config at repo root, restructure `skills/` to match Claude Code's expected plugin-marketplace layout, expand hook coverage so each rule has an enforcement mechanism, and ship a `bootstrap.sh` that installs all dependencies (root `npm install`, plugin build, submodule init, hook permissions, settings.local.json template) in one command.
 
 ## Problem Statement
 
-The MoovieAi meta-repo aims to be a portable "AI-assisted development hub" that any contributor can clone and use immediately. Today, after a fresh clone, the following fail or are unverifiable without manual debugging:
+The MuuvieAi meta-repo aims to be a portable "AI-assisted development hub" that any contributor can clone and use immediately. Today, after a fresh clone, the following fail or are unverifiable without manual debugging:
 
 1. **Skills do not surface** in Claude Code's skill picker despite `extraKnownMarketplaces.local-skills` declaration in `.claude/settings.json` [Source: .claude/settings.json, lines 50-57].
 2. **Three of four rule files are unenforced** — only `LOCAL_CLAUDE_CONFIG.md` is verified by `validate-config.sh`; `AI_AGNOSTIC_SUBMODULES`, `NO_COAUTHORS`, and `PYTHON_ENVS` rely on Claude reading CLAUDE.md and choosing to comply [Source: .claude/validate-config.sh, lines 11-22].
@@ -55,7 +55,7 @@ Why now: The maintainer is unable to validate that ecosystem rules ship correctl
 |------|--------|---------|
 | `skills/verify-docs-before-pr.md` | Flat `.md` with frontmatter | No — wrong location for flat-file skills |
 | `skills/setting-up-linear-mcp/SKILL.md` | Subdir with SKILL.md | No — marketplace structure missing |
-| `skills/moovie-research-format/SKILL.md` | Subdir with SKILL.md | No — marketplace structure missing |
+| `skills/muuvie-research-format/SKILL.md` | Subdir with SKILL.md | No — marketplace structure missing |
 
 [Source: `ls -la skills/`]
 
@@ -86,11 +86,11 @@ Why now: The maintainer is unable to validate that ecosystem rules ship correctl
 ## Issues Identified
 
 ### Issue 1 — Skills not surfacing in skill picker
-**Symptom:** `Skill("moovie-research-format")` or `/verify-docs-before-pr` does not resolve to available skills.
+**Symptom:** `Skill("muuvie-research-format")` or `/verify-docs-before-pr` does not resolve to available skills.
 
 **Root cause:** `extraKnownMarketplaces.local-skills` in `.claude/settings.json` points to `./skills`, which is a Claude Code **plugin marketplace** discovery mechanism, not a project-level skill loader. A plugin marketplace requires a `marketplace.json` at the root of the declared path that enumerates plugins, each of which then ships its own `skills/` subdirectory. The current `skills/` directory has no `marketplace.json` and is not structured as a plugin marketplace [Source: claude-code-plugin-marketplace conventions; absence of `skills/marketplace.json`].
 
-**Impact:** All three custom skills (`verify-docs-before-pr`, `setting-up-linear-mcp`, `moovie-research-format`) are invisible to Claude Code, even though CLAUDE.md instructs Claude to invoke them.
+**Impact:** All three custom skills (`verify-docs-before-pr`, `setting-up-linear-mcp`, `muuvie-research-format`) are invisible to Claude Code, even though CLAUDE.md instructs Claude to invoke them.
 
 ### Issue 2 — Duplicate, conflicting MCP server registration
 **Symptom:** Unclear which `repo-management` config Claude Code uses; `linear` MCP server is only in one of two files.
@@ -181,17 +181,17 @@ Root `package.json` is **untracked** (`?? package.json` per `git status`) — a 
 **Verdict:** **Recommended.** Aligns with stated repo purpose.
 
 ### Option 3: Use upstream `superpowers` plugin marketplace instead
-**Description:** Delete custom `skills/` directory. Adopt the public `superpowers` skill pack and let maintainer install via standard marketplace command. Keep only the truly Moovie-specific rules locally.
+**Description:** Delete custom `skills/` directory. Adopt the public `superpowers` skill pack and let maintainer install via standard marketplace command. Keep only the truly Muuvie-specific rules locally.
 
 **Pros:**
 - Zero maintenance burden for skill plumbing
 - Skills already battle-tested by Anthropic [Source: superpowers skill catalog visible in this session]
 
 **Cons:**
-- Loses ecosystem-specific skills (`moovie-research-format`, `setting-up-linear-mcp` are Moovie-specific) [Source: skill purpose statements]
+- Loses ecosystem-specific skills (`muuvie-research-format`, `setting-up-linear-mcp` are Muuvie-specific) [Source: skill purpose statements]
 - Doesn't solve MCP duplication or hook gaps
 
-**Verdict:** Rejected as primary path. Useful complement — superpowers can live alongside custom Moovie skills.
+**Verdict:** Rejected as primary path. Useful complement — superpowers can live alongside custom Muuvie skills.
 
 ## Recommended Approach
 
@@ -323,7 +323,7 @@ Estimated effort: 2–3 hours focused work. No code changes to submodules.
 ## Alternative Approaches (not chosen)
 
 - **Option 1 (minimal patch):** Rejected because it leaves skills broken — the maintainer's primary complaint.
-- **Option 3 (superpowers-only):** Rejected as sole strategy because ecosystem-specific skills must live in-repo. Acceptable as a complement: install `superpowers` on top of the custom Moovie skill set.
+- **Option 3 (superpowers-only):** Rejected as sole strategy because ecosystem-specific skills must live in-repo. Acceptable as a complement: install `superpowers` on top of the custom Muuvie skill set.
 - **Globally installed Claude config:** Rejected — violates `LOCAL_CLAUDE_CONFIG.md` rule [Source: rules/LOCAL_CLAUDE_CONFIG.md].
 
 ## Next Steps / Action Items
@@ -374,7 +374,7 @@ While this audit was in review, `main` advanced by 3 commits (`2f5934a`, `06d449
 | Flutter-specific rules | 7 (`feature-architecture`, `feature-implementation`, `feature-testing`, `ui-architecture`, `localization`, `accessibility`, `variable-naming`) | `rules/*.md` | Added |
 | Pipeline state | 2 (`pipeline-queue.json`, `template.md`) | `task/*` | Added (with completed snapshot for `movie-details-update`) |
 | Secondary CLAUDE.md | 1 | `.claude/CLAUDE.md` | Added (content is wrong — see Issue 14) |
-| Research subdirs | 4 (`specs/`, `reviews/`, `requests/`, `archive/`) | `research/*/` | Added (deviates from `moovie-research-format`) |
+| Research subdirs | 4 (`specs/`, `reviews/`, `requests/`, `archive/`) | `research/*/` | Added (deviates from `muuvie-research-format`) |
 
 The pipeline architecture is designed as a 5-stage AI feature-development workflow (pm-spec → architect-review → implementer-tester → code-review → validator), with `task/pipeline-queue.json` tracking stage state and hooks coordinating transitions. One feature (`movie-details-update`) has been run through it end-to-end [Source: task/pipeline-queue.json].
 
@@ -399,7 +399,7 @@ Eight new issues found. Numbering continues from the original 7.
 #### Issue 10 — `.claude/CLAUDE.md` content is wrong
 **Symptom:** Secondary CLAUDE.md in `.claude/` describes a Flutter app called "moowvies", lists `flutter pub get` as the build command, and declares "Never ask for permission to apply changes — just do it" as a project-wide override.
 
-**Root cause:** File appears to have been authored for the `moovie/` submodule (Flutter app) but was placed in the meta-repo's `.claude/` directory [Source: `.claude/CLAUDE.md` lines 5, 8-13, 16-19]. Frontmatter uses `alwaysApply: true` — a non-standard field outside Claude Code's documented frontmatter schema [Source: `.claude/CLAUDE.md` lines 1-3].
+**Root cause:** File appears to have been authored for the `muuvie/` submodule (Flutter app) but was placed in the meta-repo's `.claude/` directory [Source: `.claude/CLAUDE.md` lines 5, 8-13, 16-19]. Frontmatter uses `alwaysApply: true` — a non-standard field outside Claude Code's documented frontmatter schema [Source: `.claude/CLAUDE.md` lines 1-3].
 
 **Impact (severe):** The `Never ask for permission` line overrides Claude Code's default safety posture for *every* session in this repo, including destructive operations. The Flutter-specific build/test commands mislead any session that reads this file as ecosystem guidance. The non-standard frontmatter is silently ignored — its presence implies enforcement that does not exist.
 
@@ -412,7 +412,7 @@ Eight new issues found. Numbering continues from the original 7.
 
 #### Issue 12 — Skills directory mixes flat-file and subdirectory layouts
 **Symptom:** `skills/` contains a mix of structures:
-- Subdirectory + `SKILL.md`: `moovie-research-format/`, `setting-up-linear-mcp/`
+- Subdirectory + `SKILL.md`: `muuvie-research-format/`, `setting-up-linear-mcp/`
 - Flat `.md`: `verify-docs-before-pr.md`, `new-datasource.md`, `new-repository.md`, `new-usecase.md`, `new-ui-module.md`
 
 **Root cause:** No enforced convention. Original 3 ecosystem skills used subdir layout; the 4 scaffolders added in PR #3 used flat-file layout.
@@ -454,7 +454,7 @@ The 5 phases stand, but scope per phase expands. Phase 6 added for pipeline clea
 | Phase | Original Scope | Expanded Scope (decisions locked 2026-05-15) |
 |-------|----------------|----------------|
 | 1 — MCP consolidation | Move `.mcp.json` to root, add `linear`, dedupe | **+** Fold working-tree Linear MCP fix: rename package `@linear/mcp` → `linear-mcp`, env var `LINEAR_API_TOKEN` → `LINEAR_ACCESS_TOKEN`, remove duplicate top-level scoping vars (Issue 16) |
-| 2 — Skill restructure | Move 3 skills to `.claude/skills/<name>/SKILL.md` | **+** Delete `skills/new-datasource.md`, `new-repository.md`, `new-usecase.md`, `new-ui-module.md` (duplicates of `commands/`, per Decision 1). **+** Update `moovie-research-format` skill to permit subdir-based pipeline outputs (per Decision 4) |
+| 2 — Skill restructure | Move 3 skills to `.claude/skills/<name>/SKILL.md` | **+** Delete `skills/new-datasource.md`, `new-repository.md`, `new-usecase.md`, `new-ui-module.md` (duplicates of `commands/`, per Decision 1). **+** Update `muuvie-research-format` skill to permit subdir-based pipeline outputs (per Decision 4) |
 | 3 — Rule + hook coverage | Add coauthor / python-env / session-start hooks | **+** Move `hooks/` → `.claude/hooks/` and `task/` → `.claude/task/` (per Decision 2). Aligns with existing comment headers and `pipeline-coordinator.sh:10` path. **+** Register all 13 hooks in `.claude/settings.json` with correct event matchers. **+** Wire rule-enforcement hooks to rules (`validate-implementation.sh` ↔ `rules/feature-implementation.md`, `validate-localization.sh` ↔ `rules/localization.md`, etc.) |
 | 4 — Bootstrap script | `bootstrap.sh` + template + unignore lockfile | **+** `chmod +x .claude/hooks/*.sh` step. **+** Validate `.claude/task/` exists, seed empty queue from `template.md` if missing |
 | 5 — Doc cleanup | Update `skills/README.md`, `agents/README.md`, root README, CLAUDE.md | **+** Rewrite `.claude/CLAUDE.md` per Decision 3 (split: root CLAUDE.md = human project instructions; `.claude/CLAUDE.md` = Claude/tooling-specific behavior). Remove `alwaysApply: true` non-standard frontmatter. Remove `Never ask for permission` line. Drop Flutter-app description. **+** Fix `agents/README.md` name mismatch (Issue 15: `code-reviewer` → `code-review`). **+** Update `research/README.md` for subdir conventions |
@@ -467,7 +467,7 @@ The 5 phases stand, but scope per phase expands. Phase 6 added for pipeline clea
 | 1 | Commands vs skills | **Keep `commands/`, drop `skills/new-*.md`.** Agent files (e.g. `agents/implementer-tester.md` line 42-45) reference `/new-*` slash syntax → command form is canonical. |
 | 2 | Hook location | **Move to `.claude/hooks/` + `.claude/task/`.** Aligns with comment headers and `pipeline-coordinator.sh:10` which already reads from `.claude/task/pipeline-queue.json`. |
 | 3 | `.claude/CLAUDE.md` disposition | **Keep both files, split responsibility.** Root `CLAUDE.md` = human-readable project instructions (architecture, conventions, workflows). `.claude/CLAUDE.md` = Claude/tooling-specific behavior (tool preferences, hook expectations, subagent overrides, output formatting). Current file content (Flutter app description, "Never ask for permission", `alwaysApply: true`) is wrong on all counts and will be rewritten from scratch. Both files stay in meta-repo only — `AI_AGNOSTIC_SUBMODULES` rule unchanged. |
-| 4 | Research subdirs vs `moovie-research-format` | **Update skill to allow subdirs.** Permit pipeline-generated docs in `specs/reviews/requests/archive/` subdirs. Keep flat `YYYY-MM-DD-topic.md` for ad-hoc research. |
+| 4 | Research subdirs vs `muuvie-research-format` | **Update skill to allow subdirs.** Permit pipeline-generated docs in `specs/reviews/requests/archive/` subdirs. Keep flat `YYYY-MM-DD-topic.md` for ad-hoc research. |
 | 5 | Folding Linear MCP fix into this PR | **Defer to Phase 1.** Keep this PR doc-only. Working-tree edits will land with Phase 1's branch. |
 
 ### PR Base Branch Convention (2026-05-15)

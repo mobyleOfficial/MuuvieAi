@@ -4,10 +4,13 @@
 # Define this as a Stop hook in the pm-spec agent's frontmatter.
 # Reads the active stage from .claude/task/pipeline-queue.json.
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+# Already re-running because a Stop hook blocked: let the agent stop.
+stop_hook_active && exit 0
 
-input=$(cat)
-queue_file=".claude/task/pipeline-queue.json"
+root=$(meta_root "$HOOK_CWD") || exit 0
+queue_file="$root/.claude/task/pipeline-queue.json"
 
 if [ ! -f "$queue_file" ]; then
   # No active pipeline — nothing to validate
@@ -22,13 +25,15 @@ if [ -z "$spec_file" ] || [ "$spec_file" = "null" ]; then
   exit 0
 fi
 
+case "$spec_file" in /*) ;; *) spec_file="$root/$spec_file" ;; esac
+
 if [ ! -f "$spec_file" ]; then
   echo "Blocked: spec file was not created at $spec_file" >&2
   echo "The pm-spec agent must write the spec to this path." >&2
   exit 2
 fi
 
-# Required sections per .claude/agents/pm-spec.md template
+# Required sections per the pm-spec agent's template
 REQUIRED_SECTIONS=(
   "## Overview"
   "## User Stories"

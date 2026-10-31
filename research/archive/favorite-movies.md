@@ -109,8 +109,8 @@ Create the screen inside `ui/movies_ui/lib/favorite_movies/` following the `Tren
 
 - `ui/movies_ui/lib/favorite_movies/favorite_movies_screen.dart`:
   - `FavoriteMoviesScreen` — `StatefulWidget`, creates cubit, provides via `BlocProvider`
-  - Uses `PagingListener` + `PagedGridView<int, Movie>` with `moovieGridDelegate`
-  - Each item is `MoovieMoviePosterCard` with `onTap` navigating to `MovieDetailRoute`
+  - Uses `PagingListener` + `PagedGridView<int, Movie>` with `muuvieGridDelegate`
+  - Each item is `MuuvieMoviePosterCard` with `onTap` navigating to `MovieDetailRoute`
   - Constructor: `required GetUserFavoriteMovies getUserFavoriteMovies, required String userId`
 
 - `ui/movies_ui/lib/favorite_movies/favorite_movies_page.dart`:

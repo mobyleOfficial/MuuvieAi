@@ -2,24 +2,28 @@
 # Verifies README.md and CLAUDE.md are updated when relevant code changes
 # Triggered before PR creation to catch out-of-sync documentation.
 #
-# Base branch convention (matches CLAUDE.md):
-#   feature/* | fix/*  -> develop
+# Base branch convention (matches CLAUDE.md; the integration branch is `dev`,
+# with `develop` accepted for older clones):
+#   feature/* | fix/*  -> dev
 #   release/*          -> main
-#   develop            -> main (release PR)
-#   anything else      -> develop (default)
+#   dev | develop      -> main (release PR)
+#   anything else      -> dev (default)
 
 set -euo pipefail
 
 # Determine target base branch from current HEAD
 current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
 case "$current_branch" in
-  release/*|develop|main) base_ref="main" ;;
-  *)                      base_ref="develop" ;;
+  release/*|dev|develop|main) base_ref="main" ;;
+  *)                          base_ref="dev" ;;
 esac
 
-# Resolve a usable ref: prefer local, fall back to origin/, then bail out
+# Resolve a usable ref: prefer origin/ (a stale local branch would flag files
+# already merged upstream), fall back to the local branch, then bail out.
 resolved_base=""
-for candidate in "$base_ref" "origin/$base_ref"; do
+candidates=("origin/$base_ref" "$base_ref")
+[ "$base_ref" = "dev" ] && candidates+=("origin/develop" "develop")
+for candidate in "${candidates[@]}"; do
   if git rev-parse --verify --quiet "$candidate" >/dev/null; then
     resolved_base="$candidate"
     break
@@ -46,11 +50,11 @@ DOCS_MODIFIED=0
 
 # Check if any documentation file was modified. Per rules/DOCS_UP_TO_DATE.md
 # a doc update can land in README/CLAUDE.md (root or subdir), an agent spec
-# (agents/*.md), a rule definition (rules/*.md), a skill (.claude/skills/),
+# (.claude/agents/*.md), a rule definition (rules/*.md), a skill (.claude/skills/),
 # a hook README, or the audit/research docs (research/*.md). Any .md change
 # under those paths satisfies the rule — the underlying intent is that human-
 # readable behavior documentation stays in sync with code.
-if echo "$CHANGED_FILES" | grep -qE '(^|/)(README|CLAUDE)\.md$|^agents/.*\.md$|^rules/.*\.md$|^\.claude/.*\.md$|^research/.*\.md$|^commands/.*\.md$'; then
+if echo "$CHANGED_FILES" | grep -qE '(^|/)(README|CLAUDE)\.md$|^.claude/agents/.*\.md$|^rules/.*\.md$|^\.claude/.*\.md$|^research/.*\.md$'; then
   DOCS_MODIFIED=1
 fi
 
@@ -58,9 +62,9 @@ fi
 CRITICAL_CHANGES=(
   "^\.claude/"                          # Claude config + skills + hooks
   "^plugins/"                           # Plugin changes
-  "^agents/"                            # Agents changes
+  "^.claude/agents/"                            # Agents changes
   "^rules/"                             # Rules changes
-  "^moovie/" "^backend/"                # Submodule structure changes
+  "^muuvie(/|$)" "^backend(/|$)"        # Submodule refs and structure
 )
 
 HAS_CRITICAL_CHANGE=0
@@ -72,7 +76,7 @@ for pattern in "${CRITICAL_CHANGES[@]}"; do
 done
 
 # Check for setup/dependency changes
-if echo "$CHANGED_FILES" | grep -qE "(package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker)"; then
+if echo "$CHANGED_FILES" | grep -qiE "(package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker)"; then
   HAS_CRITICAL_CHANGE=1
 fi
 
@@ -80,7 +84,7 @@ if [ "$HAS_CRITICAL_CHANGE" -eq 1 ] && [ "$DOCS_MODIFIED" -eq 0 ]; then
   echo "⚠️  Documentation out of sync"
   echo ""
   echo "Critical files changed:"
-  echo "$CHANGED_FILES" | grep -E "^\.claude/|^plugins/|^agents/|^rules/|^moovie/|^backend/|package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker" | sed 's/^/  - /'
+  echo "$CHANGED_FILES" | grep -iE "^\.claude/|^plugins/|^.claude/agents/|^rules/|^muuvie|^backend|package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker" | sed 's/^/  - /'
   echo ""
   echo "README.md and/or CLAUDE.md should be updated."
   echo "Update docs before opening PR to keep team in sync."

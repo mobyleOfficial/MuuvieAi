@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bootstrap.sh
-# Sets up the MoovieAi meta-repo for a fresh clone:
-#   1. Initialize git submodules (moovie + backend)
+# Sets up the MuuvieAi meta-repo for a fresh clone:
+#   1. Initialize git submodules (muuvie + backend)
 #   2. Install root npm deps (linear-mcp)
 #   3. Install + build the repo-management MCP plugin
 #   4. Make every .claude/**/*.sh shell script executable
@@ -34,7 +34,7 @@ require gh    # used by the repo-management MCP plugin's open-pull-request tool
 
 # --- 1. Submodules ------------------------------------------------------------
 
-log "Initializing submodules (moovie, backend)..."
+log "Initializing submodules (muuvie, backend)..."
 git submodule update --init --recursive
 
 # --- 2. Root npm deps ---------------------------------------------------------

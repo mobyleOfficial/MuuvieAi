@@ -1,7 +1,8 @@
 #!/bin/bash
 # .claude/hooks/format-code.sh
 # Runs `dart format` on the file the agent just touched.
-# Define this as a PostToolUse hook on the Edit and Write tools.
+# Registered as a PostToolUse hook on Edit|Write in .claude/settings.json.
+# Tests: .claude/tests/review-findings-2.test.mjs.
 # Never blocks — formatting failure is reported as a warning only.
 
 set -e
@@ -20,7 +21,7 @@ esac
 
 # Skip generated files — `dart format` works on them but formatting them is wasteful
 case "$file_path" in
-  *.g.dart|*.gr.dart|*app_localizations*) exit 0 ;;
+  *.g.dart|*.gr.dart|*.freezed.dart|*.config.dart|*app_localizations*) exit 0 ;;
 esac
 
 if [ ! -f "$file_path" ]; then

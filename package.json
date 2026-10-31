@@ -1,9 +1,10 @@
 {
-  "name": "moovieai-meta",
+  "name": "muuvieai-meta",
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "patch-package --error-on-fail"
+    "postinstall": "patch-package --error-on-fail",
+    "test:hooks": "node --test .claude/tests/ .claude/skills/muuvie-feature-map/test/"
   },
   "dependencies": {
     "linear-mcp": "1.2.0",

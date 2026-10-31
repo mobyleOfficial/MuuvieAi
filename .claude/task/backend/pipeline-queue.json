@@ -1,0 +1,70 @@
+{
+  "current_stage": "done",
+  "feature": "login",
+  "stages": [
+    {
+      "name": "spec",
+      "agent": "pm-spec",
+      "status": "completed",
+      "description": "Write specification for the backend feature",
+      "input": "task/backend/requests/{feature}.md",
+      "output": "research/specs/{feature}.md"
+    },
+    {
+      "name": "review",
+      "agent": "architect-review",
+      "status": "completed",
+      "description": "Review spec for feasibility and alignment",
+      "input": "research/specs/{feature}.md",
+      "output": "research/reviews/{feature}-review.md"
+    },
+    {
+      "name": "implement",
+      "agent": "backend-implementer",
+      "status": "completed",
+      "description": "Implement backend feature using Kotlin/Ktor skills",
+      "input": "research/specs/{feature}.md",
+      "output": "backend/src/**"
+    },
+    {
+      "name": "code-review",
+      "agent": "code-reviewer",
+      "status": "completed",
+      "description": "Review code quality and architecture",
+      "input": "backend/src/**",
+      "output": "research/reviews/{feature}-code-review.md"
+    },
+    {
+      "name": "validate",
+      "agent": "validator",
+      "status": "completed",
+      "description": "Final pre-merge validation",
+      "input": "backend/src/**",
+      "output": "validation report"
+    }
+  ],
+  "history": [
+    {
+      "stage": "implement",
+      "date": "2026-07-22",
+      "agent": "backend-implementer",
+      "result": "completed",
+      "summary": "All 3 review conditions met. 7 new files, 10 modified. 31 tests, 0 failures. BCrypt auth, token blocklist, OAuth env vars optional."
+    },
+    {
+      "stage": "code-review",
+      "date": "2026-07-22",
+      "agent": "code-reviewer",
+      "result": "APPROVED_WITH_CONDITIONS",
+      "summary": "2 issues fixed: recentlyWatchedMovies now populated for existing users, username uniqueIndex added. Also extracted BCrypt cost constant and added blocklist cleanup coroutine."
+    },
+    {
+      "stage": "validate",
+      "date": "2026-07-22",
+      "agent": "validator",
+      "result": "READY_TO_MERGE",
+      "summary": "All 6 ACs pass, all 3 architect conditions met, all code review fixes verified. 31 tests pass, clean build, no breaking changes."
+    }
+  ],
+  "notes": "Backend feature pipeline follows same flow as frontend but uses backend-implementer agent and Kotlin/Ktor stack. All specs and reviews go to research/ directory (shared). Implementation goes to backend/ submodule."
+}
