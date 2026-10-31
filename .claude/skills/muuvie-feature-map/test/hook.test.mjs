@@ -68,6 +68,21 @@ test('ignores other commands and pushes from inside a submodule', () => {
   }
 });
 
+test('ignores "git push" inside a heredoc body, but not after it', () => {
+  const root = metaRepo();
+  editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
+  const heredoc = "node - <<'EOF'\nconst doc = 'run `cd x && git push` later';\nEOF";
+  assert.equal(runHook(root, heredoc).status, 0);
+  assert.equal(runHook(root, `cat <<EOF > notes.txt\ngit push\nEOF\ngit push`).status, 2);
+});
+
+test("skips a quoted submodule path", () => {
+  const root = metaRepo();
+  editPage(root, SHELVES_FEATURE.replace('## Gotchas', '- `GET /nope`\n\n## Gotchas'));
+  assert.equal(runHook(root, "cd 'backend' && git push").status, 0);
+  assert.equal(runHook(root, 'git -C "./muuvie" push').status, 0);
+});
+
 test('does not block when there is no base branch', () => {
   const root = metaRepo();
   git(root, 'update-ref', '-d', 'refs/remotes/origin/dev');

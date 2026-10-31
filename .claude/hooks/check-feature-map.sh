@@ -12,6 +12,24 @@ if [ -z "$command" ]; then
   exit 0
 fi
 
+# Heredoc bodies are data, not commands: drop them before matching, so a script
+# that merely mentions "git push" doesn't trigger the check.
+command=$(printf '%s\n' "$command" | awk '
+  in_doc {
+    line = $0
+    sub(/^\t+/, "", line)
+    if (line == tag) in_doc = 0
+    next
+  }
+  {
+    print
+    if (match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+      tag = substr($0, RSTART, RLENGTH)
+      gsub(/<<-?[ \t]*|["\047]/, "", tag)
+      in_doc = 1
+    }
+  }')
+
 # Same matching as check-docs-sync.sh: a real `gh pr create` / `git push`, at the
 # start of a pipeline, after a chain operator, or after env-var prefixes.
 PR_PATTERN='(^|[;&|][[:space:]]*)([A-Z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+create'
@@ -22,7 +40,8 @@ if ! echo "$command" | grep -qE "$PR_PATTERN" && ! echo "$command" | grep -qE "$
 fi
 
 # A push or PR from inside a submodule is that repo's business, not the map's.
-if echo "$command" | grep -qE '(^|[;&|[:space:]])(cd[[:space:]]+|git[[:space:]]+-C[[:space:]]+)("|\x27)?(\./)?(muuvie|backend)([/"\x27[:space:];&|]|$)'; then
+q="[\"']"
+if echo "$command" | grep -qE "(^|[;&|[:space:]])(cd[[:space:]]+|git[[:space:]]+-C[[:space:]]+)${q}?(\./)?(muuvie|backend)(/|${q}|[[:space:];&|]|\$)"; then
   exit 0
 fi
 
