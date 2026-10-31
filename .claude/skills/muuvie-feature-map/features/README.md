@@ -81,15 +81,15 @@ Reachable only indirectly, by construction:
 
 - [app-shell](app-shell.md): launch, the five tabs, deep links, WebSocket and push events and where each lands, device registration.
 - [auth](auth.md): log in, sign up, nickname check, session and token refresh, OAuth.
-- [onboarding](onboarding.md): first-run flow after sign-up.
-- [settings](settings.md): settings screen, notification preferences, account actions.
+- [onboarding](onboarding.md): the intro shown once per install (not tied to an account), replayable from Configurações.
+- [settings](settings.md): Configurações — notification switches, push permission, intro replay, logout (no delete-account or change-password).
 
-### Atts (`SocialTab`)
+### Social (`SocialTab`, called Atts in code; `l10n:navAtts`)
 
 - [social-feed](social-feed.md): the activity feed, loving activities.
 - [whispers](whispers.md): conversations and messages.
 
-### Catálogo (`SearchTab`)
+### Catálogo (`SearchTab`; `l10n:navCatalogo`)
 
 - [catalog-search](catalog-search.md): search, browse by release date and category, rankings, discover lists.
 - [movie-detail](movie-detail.md): a movie's page, its community and timeline, people.
@@ -97,17 +97,17 @@ Reachable only indirectly, by construction:
 - [shelves](shelves.md): shelves, adding movies, saved shelves.
 - [locadoras](locadoras.md): locadoras (user video stores) and their shelves.
 
-### Programação (`ProgramacaoTab`)
+### Programação (`ProgramacaoTab`; `l10n:navProgramacao`)
 
 - [programacao](programacao.md): the hub of maratonas and cineclubes.
 - [maratonas](maratonas.md): movie marathons — challenges, progress, ranking, editor.
 - [cineclubes](cineclubes.md): film clubs — participation, debates, progress, editor.
 
-### Notícias (`NoticiasTab`)
+### Notícias (`NoticiasTab`; `l10n:navNoticias`)
 
 - [news](news.md): news list and article detail.
 
-### Perfil (`ProfileTab`)
+### Perfil (`ProfileTab`; `l10n:profile`)
 
 - [profile](profile.md): own profile, tabs, edit profile, highlights.
 - [public-profile](public-profile.md): another user's profile.
