@@ -24,14 +24,17 @@ hook_read_input() {
 # Drops heredoc bodies (data, not commands). Tracks quotes and comments, so
 # `python3 -c "print(1 << n)"` or `echo 'a << EOF'` is not a heredoc, and a
 # here-string (<<<) is not one either. The terminator may be followed by `)`
-# or quotes, as in "$(cat <<'EOF' ... EOF)".
+# or quotes, as in "$(cat <<'EOF' ... EOF)". Fails closed: a heredoc that never
+# terminates (e.g. an arithmetic `$((1 << n))` mistaken for one) is re-emitted,
+# so its lines are still checked.
 strip_heredocs() {
   printf '%s\n' "$1" | awk '
     in_doc {
       line = $0
       sub(/^\t+/, "", line)
       sub(/[)"\047 \t;]+$/, "", line)
-      if (line == tag) in_doc = 0
+      if (line == tag) { in_doc = 0; body = ""; next }
+      body = body $0 "\n"
       next
     }
     {
@@ -46,53 +49,101 @@ strip_heredocs() {
           if (c == q) q = ""
           i++; continue
         }
+        if (c == "\\") { i += 2; continue }
         if (c == ")" && substr(stack, length(stack)) == "\"") { stack = substr(stack, 1, length(stack) - 1); q = "\""; i++; continue }
         if (c == "\047" || c == "\"") { q = c; i++; continue }
         if (c == "#" && (i == 1 || substr($0, i - 1, 1) ~ /[ \t;&|(]/)) break
-        if (substr($0, i, 2) == "<<" && substr($0, i + 2, 1) != "<" && (i == 1 || substr($0, i - 1, 1) != "<")) {
+        if (substr($0, i, 2) == "<<" && substr($0, i + 2, 1) != "<" && (i == 1 || substr($0, i - 1, 1) != "<") && substr($0, i - 2, 2) != "$(") {
           rest = substr($0, i + 2)
           sub(/^-?[ \t]*/, "", rest)
           if (match(rest, /^["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
             tag = substr(rest, RSTART, RLENGTH)
             gsub(/["\047]/, "", tag)
-            in_doc = 1
+            in_doc = 1; body = ""
             break
           }
         }
         i++
       }
-    }'
+    }
+    END { if (in_doc) printf "%s", body }'
 }
 
-# Joins backslash-newline continuations, then empties quoted strings ('…' and
-# "…", escapes honoured, spanning lines), keeping the quotes so word positions
-# survive: `git commit -m "never push --force"` becomes `git commit -m ""`.
+# Joins backslash-newline continuations, drops # comments, and empties quoted
+# strings ('…', "…", $'…', spanning lines), keeping the quotes so word
+# positions survive: `git commit -m "never push --force"` becomes
+# `git commit -m ""`. Inside "…", a $(…) or `…` command substitution still
+# runs, so its (stripped) body is emitted on its own line to be checked.
+# Escapes outside quotes (don\'t) are honoured. Fails closed: from an
+# unterminated quote on, the text is kept as-is rather than hidden.
 strip_quotes() {
   printf '%s\n' "$1" | awk '
-    { buf = buf $0 "\n" }
-    END {
-      gsub(/\\\n/, " ", buf)
-      out = ""; n = length(buf); i = 1
+    # Index of the ) closing the $( that ends just before position i of s.
+    function close_paren(s, i,   n, depth, c, q) {
+      n = length(s); depth = 1; q = ""
       while (i <= n) {
-        c = substr(buf, i, 1)
+        c = substr(s, i, 1)
+        if (q != "") { if (c == "\\" && q == "\"") { i += 2; continue } if (c == q) q = ""; i++; continue }
+        if (c == "\\") { i += 2; continue }
+        if (c == "\047" || c == "\"") q = c
+        else if (c == "(") depth++
+        else if (c == ")") { depth--; if (depth == 0) return i }
+        i++
+      }
+      return 0
+    }
+    function strip(s,   out, n, i, c, j, k, d, subs, inner, e) {
+      out = ""; n = length(s); i = 1
+      while (i <= n) {
+        c = substr(s, i, 1)
+        if (c == "\\") { out = out substr(s, i, 2); i += 2; continue }
+        if (c == "#" && (i == 1 || substr(s, i - 1, 1) ~ /[ \t\n;&|(]/)) {
+          j = index(substr(s, i), "\n"); if (j == 0) break
+          i += j - 1; continue
+        }
+        if (c == "$" && substr(s, i + 1, 1) == "\047") {
+          k = i + 2
+          while (k <= n) { d = substr(s, k, 1); if (d == "\\") { k += 2; continue } if (d == "\047") break; k++ }
+          if (k > n) return out substr(s, i)
+          out = out "\047\047"; i = k + 1; continue
+        }
         if (c == "\047") {
-          j = index(substr(buf, i + 1), "\047")
-          out = out "\047\047"
-          if (j == 0) break
-          i += j + 1; continue
+          j = index(substr(s, i + 1), "\047")
+          if (j == 0) return out substr(s, i)
+          out = out "\047\047"; i += j + 1; continue
         }
         if (c == "\"") {
-          k = i + 1
+          subs = ""; k = i + 1
           while (k <= n) {
-            d = substr(buf, k, 1)
+            d = substr(s, k, 1)
             if (d == "\\") { k += 2; continue }
             if (d == "\"") break
+            if (d == "$" && substr(s, k + 1, 1) == "(") {
+              e = close_paren(s, k + 2)
+              if (e == 0) return out substr(s, i)
+              inner = substr(s, k + 2, e - k - 2)
+              subs = subs "\n" strip(inner) "\n"
+              k = e + 1; continue
+            }
+            if (d == "`") {
+              e = index(substr(s, k + 1), "`")
+              if (e == 0) return out substr(s, i)
+              subs = subs "\n" strip(substr(s, k + 1, e - 1)) "\n"
+              k += e + 1; continue
+            }
             k++
           }
-          out = out "\"\""; i = k + 1; continue
+          if (k > n) return out substr(s, i)
+          out = out "\"\"" subs; i = k + 1; continue
         }
         out = out c; i++
       }
+      return out
+    }
+    { buf = buf $0 "\n" }
+    END {
+      gsub(/\\\n/, " ", buf)
+      out = strip(buf)
       sub(/\n$/, "", out)
       print out
     }'

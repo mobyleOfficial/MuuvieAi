@@ -175,16 +175,21 @@ check_text() {
   nohd=$(strip_heredocs "$raw")
   text=$(strip_quotes "$nohd")
 
+  # A shell word at a command position: after a separator, wrappers or VAR=value,
+  # optionally path-qualified (/bin/bash). Mentions inside prose don't qualify.
+  local at_cmd='(^|[;&|({][[:space:]]*)(([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*|env|exec|command|nohup|sudo|then|do|else|time|!)[[:space:]]+)*([^[:space:];&|(){}]*/)?'
+  local shell_c='(ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*'
+
   # On the quote-stripped text, so a message that mentions them doesn't count.
-  if printf '%s\n' "$text" | grep -qE '(curl|wget)[^|;&]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh([[:space:]]|$)'; then
+  if printf '%s\n' "$text" | grep -qE '(curl|wget)[^|;&]*\|[[:space:]]*((sudo|env|exec|command|nohup)[[:space:]]+)*([^[:space:]|]*/)?(ba|z)?sh([[:space:]]|$)'; then
     block "piping a download into a shell runs remote code"
   fi
   if printf '%s\n' "$text" | grep -qE ':\(\)[[:space:]]*\{[[:space:]]*:[[:space:]]*\|[[:space:]]*:[[:space:]]*&[[:space:]]*\}'; then
     block "fork bomb"
   fi
   # `bash -c "$(curl …)"` hides the download inside quotes, so this one reads the
-  # quoted text, but only with the shell at a command position.
-  if printf '%s\n' "$nohd" | grep -qE "(^|[;&|(][[:space:]]*)(ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*[[:space:]]+[\"']?\\\$\\((curl|wget)"; then
+  # quoted text, with the shell at a command position.
+  if printf '%s\n' "$nohd" | grep -qE "${at_cmd}${shell_c}[[:space:]]+[\"']?\\\$\\((curl|wget)"; then
     block "running a downloaded script runs remote code"
   fi
 
@@ -192,14 +197,15 @@ check_text() {
     check_segment "$seg"
   done < <(command_segments "$text")
 
-  # Nested shells (bash -c, bash -lc, sh -ec, bash -l -c, eval): check what they would run.
+  # Nested shells at a command position (bash -c, bash -lc, sh -ec, bash -l -c,
+  # eval): check what they would run.
   [ "$depth" -ge 3 ] && return 0
-  local nested="((ba|z)?sh([[:space:]]+-[a-zA-Z]+)*[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*|eval)[[:space:]]+"
+  local nested="${at_cmd}(${shell_c}|eval)[[:space:]]+"
   while IFS= read -r payload; do
     [ -n "$payload" ] && check_text "$payload" $((depth + 1))
   done < <(printf '%s\n' "$nohd" |
     grep -oE "${nested}('[^']*'|\"([^\"\\\\]|\\\\.)*\")" |
-    sed -E "s/^${nested}//; s/^['\"]//; s/['\"]\$//")
+    sed -E "s#^${nested}##; s/^['\"]//; s/['\"]\$//")
 }
 
 check_text "$HOOK_COMMAND"
