@@ -25,15 +25,20 @@ shopt -u nullglob
 # default expansion, which would otherwise inject an empty entry on an empty
 # array and produce off-by-one counts + a leading bare comma in output.
 # Tally per category so the summary stays one line as the rule set grows.
-declare -A cat_counts=()
+# One counter per category: macOS /bin/bash is 3.2, which has no associative arrays.
+n_common=0 n_frontend=0 n_backend=0 n_uncategorized=0
 filtered_rules=()
 for f in "${rule_files[@]}"; do
   name=$(basename "$f" .md)
   [ "$name" = "README" ] && continue
   filtered_rules+=("$name")
   cat=$(basename "$(dirname "$f")")
-  [ "$cat" = "rules" ] && cat="uncategorized"
-  cat_counts[$cat]=$(( ${cat_counts[$cat]:-0} + 1 ))
+  case "$cat" in
+    common) n_common=$((n_common + 1)) ;;
+    frontend) n_frontend=$((n_frontend + 1)) ;;
+    backend) n_backend=$((n_backend + 1)) ;;
+    *) n_uncategorized=$((n_uncategorized + 1)) ;;
+  esac
 done
 
 rule_count=${#filtered_rules[@]}
@@ -49,7 +54,7 @@ fi
 # stays to one line per resource type.
 rule_names=""
 for cat in common frontend backend uncategorized; do
-  n=${cat_counts[$cat]:-0}
+  case "$cat" in common) n=$n_common ;; frontend) n=$n_frontend ;; backend) n=$n_backend ;; *) n=$n_uncategorized ;; esac
   [ "$n" -eq 0 ] && continue
   rule_names="${rule_names:+$rule_names, }${n} ${cat}"
 done
