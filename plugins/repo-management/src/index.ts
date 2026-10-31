@@ -24,15 +24,24 @@ function run(cmd: string, argv: string[]): string {
   });
 }
 
-// Switch to the project's base development branch (develop, with `dev` as a
-// historical fallback) and pull. Used by both feature- and release-branch
-// creation so changes to the strategy land in one place.
-function checkoutDevBaseAndPull(): void {
-  try {
-    run("git", ["checkout", "develop"]);
-  } catch {
-    run("git", ["checkout", "dev"]);
+// The integration branch: `dev` in this ecosystem, with `develop` accepted
+// for older clones. Matches .claude/verify-docs.sh.
+function devBranch(): "dev" | "develop" {
+  for (const ref of ["dev", "origin/dev"]) {
+    try {
+      run("git", ["rev-parse", "--verify", "--quiet", ref]);
+      return "dev";
+    } catch {
+      // not this one
+    }
   }
+  return "develop";
+}
+
+// Switch to the integration branch and pull. Used by both feature- and
+// release-branch creation so changes to the strategy land in one place.
+function checkoutDevBaseAndPull(): void {
+  run("git", ["checkout", devBranch()]);
   run("git", ["pull", "--ff-only"]);
 }
 
@@ -122,8 +131,8 @@ const handlers: Record<string, ToolHandler> = {
     //      starting point.
     //   2. Create the feature branch from base.
     //   3. Sync submodules ON the feature branch — any submodule-pointer
-    //      commits land on the feature branch, NOT on `develop`, so the
-    //      developer's local `develop` doesn't accumulate chore commits.
+    //      commits land on the feature branch, NOT on `dev`, so the
+    //      developer's local `dev` doesn't accumulate chore commits.
     checkoutDevBaseAndPull();
     run("git", ["checkout", "-b", branchName]);
 
@@ -140,7 +149,7 @@ const handlers: Record<string, ToolHandler> = {
     const branchName = `release/${version}`;
 
     // Same ordering as create-feature-branch — submodule-pointer commits
-    // land on the release branch, not on `develop`.
+    // land on the release branch, not on `dev`.
     checkoutDevBaseAndPull();
     run("git", ["checkout", "-b", branchName]);
 
@@ -163,12 +172,13 @@ const handlers: Record<string, ToolHandler> = {
     assertGitRef(branch, "current branch");
 
     // Align with .claude/verify-docs.sh base-branch resolution:
-    //   release/*, develop, main -> main
-    //   everything else          -> develop
+    //   release/*, dev, develop, main -> main
+    //   everything else               -> dev (develop on older clones)
     // Anything that lands on `main` must be an explicit release-style branch.
-    let baseRef: "main" | "develop" = "develop";
+    let baseRef: "main" | "dev" | "develop" = devBranch();
     if (
       branch.startsWith("release/") ||
+      branch === "dev" ||
       branch === "develop" ||
       branch === "main"
     ) {
@@ -231,7 +241,7 @@ const toolDefinitions = [
   {
     name: "create-feature-branch",
     description:
-      "Sync submodules, checkout develop, and create a feature branch",
+      "Sync submodules, checkout dev, and create a feature branch",
     inputSchema: {
       type: "object",
       properties: {
@@ -246,7 +256,7 @@ const toolDefinitions = [
   {
     name: "create-release-branch",
     description:
-      "Sync submodules, checkout develop, and create a release branch",
+      "Sync submodules, checkout dev, and create a release branch",
     inputSchema: {
       type: "object",
       properties: {
@@ -261,7 +271,7 @@ const toolDefinitions = [
   {
     name: "open-pull-request",
     description:
-      "Create a pull request (feature/fix branches → develop, release branches → main)",
+      "Create a pull request (feature/fix branches → dev, release branches → main)",
     inputSchema: {
       type: "object",
       properties: {

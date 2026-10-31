@@ -21,7 +21,10 @@ GEMINI.md           # No LLM-specific config
 .copilot/           # No Copilot config
 .cursorrules        # No Cursor rules
 AI_SETUP.md         # No AI setup docs
+.claude.rar, .claude.zip, …   # No archived copies of the above either
 ```
+
+This applies at any depth (`docs/CLAUDE.md`, `tool/.claude/`), and to archives: a zipped `.claude/` is still AI tooling in the repo. (`muuvie` carried a `.claude.rar` from May to October 2026 because the hook only looked at the repo root and for the plain directory name.)
 
 ### ❌ Never Reference in Documentation
 
@@ -68,6 +71,9 @@ ls -la muuvie/.claude/
 ls -la backend/.claude/
 ls -la muuvie/CLAUDE.md
 ls -la backend/CLAUDE.md
+
+# Tracked AI tooling at any depth, archives included — the hook's own pattern
+git -C muuvie ls-files | grep -E '(^|/)(\.claude([/.]|$)|CLAUDE\.md$|\.cursorrules$|AGENTS\.md$|\.github/copilot-instructions\.md$)'
 ```
 
 ## When a Submodule Needs AI Documentation
@@ -95,6 +101,7 @@ For AI-assisted development guidance, see the parent repo: [MuuvieAi CLAUDE.md](
 
 ## Enforcement
 
+- **Hook:** `.claude/hooks/check-submodule-ai.sh` blocks `git commit` / `git push` that involve a submodule whose tracked files match the pattern above (any depth, archives included).
 - **PR reviews:** Catch CLAUDE.md, .claude/, Claude references in submodule PRs
 - **CI/CD:** Optional: Lint rule to block CLAUDE.md in submodules
 - **Team:** Explain this rule during onboarding

@@ -34,7 +34,7 @@ task/backend/
        (Uses /new-kotlin-* skills)
        └─> Datasource → Repository → Usecase → Endpoint
 
-5. Code Review (/code-reviewer)
+5. Code Review (/review-pr <PR#>)
    └─> research/reviews/{feature}-code-review.md
        (Quality review, patterns, DI registration)
 
@@ -76,7 +76,7 @@ cp task/backend/template.md task/backend/requests/trending-movies-endpoint.md
 
 ### 5. Run Code Review
 ```bash
-/code-reviewer
+/review-pr <PR#>
 # Reads: Generated backend code
 # Writes: research/reviews/trending-movies-endpoint-code-review.md
 # Checks: Patterns, DI, tests, code quality

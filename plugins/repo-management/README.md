@@ -22,7 +22,7 @@ sync-submodule --name backend
 **Use when:** Submodule is stale and needs to be brought current.
 
 ### `create-feature-branch`
-Sync all submodules, checkout develop, and create a feature branch.
+Sync all submodules, checkout dev, and create a feature branch.
 
 ```bash
 create-feature-branch --name "user-authentication"
@@ -32,7 +32,7 @@ create-feature-branch --name "user-authentication"
 **Use when:** Starting work on a new feature.
 
 ### `create-release-branch`
-Sync all submodules, checkout develop, and create a release branch.
+Sync all submodules, checkout dev, and create a release branch.
 
 ```bash
 create-release-branch --version "1.2.0"
@@ -42,7 +42,7 @@ create-release-branch --version "1.2.0"
 **Use when:** Preparing a release.
 
 ### `open-pull-request`
-Create a PR with auto-detected base branch (feature/fix → develop, release → main).
+Create a PR with auto-detected base branch (feature/fix → dev, release → main).
 
 ```bash
 open-pull-request --title "feat: add dark mode support" --description "Adds dark theme..."
@@ -84,7 +84,7 @@ All tools follow ecosystem conventions defined in [CLAUDE.md](../../CLAUDE.md):
 
 - **Commit format:** `chore:`, `feat:`, `fix:`, `doc:`
 - **Branch naming:** `feature/*`, `release/*`, `fix/*`
-- **PR targets:** feature/fix → develop, release → main
+- **PR targets:** feature/fix → dev (develop on older clones), release → main
 - **No coauthors:** Single author per commit
 
 ## Requirements

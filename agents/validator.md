@@ -35,7 +35,7 @@ You may be validating code from:
 - [ ] Do APIs match the spec contract?
 
 ### 2. Architecture Compliance (muuvie/)
-- [ ] Feature modules respect domain/data/feature layer structure (see `rules/feature-architecture.md`)
+- [ ] Feature modules respect domain/data/feature layer structure (see `rules/frontend/feature-architecture.md`)
 - [ ] Dependency direction correct: feature → data → domain
 - [ ] No cross-feature imports of `data/` packages
 - [ ] DI registration complete in `lib/di/injection.config.dart`
@@ -49,7 +49,7 @@ You may be validating code from:
 - [ ] Error responses match frontend expectations
 
 ### 4. UI Pattern Compliance (muuvie/)
-- [ ] UI modules have exactly 3 files: `*_state.dart`, `*_bloc.dart`, `*_screen.dart` (see `rules/ui-architecture.md`)
+- [ ] UI modules have exactly 4 files plus the barrel: `*_state.dart`, `*_bloc.dart`, `*_page.dart`, `*_screen.dart` (see `rules/frontend/ui-architecture.md`)
 - [ ] States use sealed classes with `Loading`/`Success`/`Error`
 - [ ] Bloc extends `Cubit`
 - [ ] Screen uses `@RoutePage()` annotation and `BlocBuilder`
@@ -63,7 +63,7 @@ You may be validating code from:
 - [ ] One class per file, snake_case filenames, PascalCase class names
 
 ### 6. Testing (muuvie/)
-- [ ] Test structure mirrors `lib/` under `test/` (see `rules/feature-testing.md`)
+- [ ] Test structure mirrors `lib/` under `test/` (see `rules/frontend/feature-testing.md`)
 - [ ] Every public use case has ≥ 1 unit test
 - [ ] Repositories/data sources are mocked, not real network/storage
 - [ ] Test files follow `*_test.dart` naming

@@ -194,7 +194,7 @@ Slash commands invoked via `/<name>`. Claude Code auto-discovers files from this
 - `/new-usecase` — Scaffold a domain usecase with `Result<T>` error handling
 - `/new-datasource` — Scaffold a remote/local datasource (Dio HTTP or local)
 - `/new-repository` — Scaffold domain/data repository pair
-- `/new-ui-module` — Scaffold a complete UI module (bloc/screen/state)
+- `/new-ui-module` — Scaffold a complete UI module (state/bloc/page/screen)
 
 **Backend scaffolding (Kotlin/Ktor):**
 - `/new-kotlin-usecase` — Scaffold a business logic usecase with `operator fun invoke()`

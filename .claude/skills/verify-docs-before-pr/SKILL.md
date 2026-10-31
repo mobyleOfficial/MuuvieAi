@@ -1,13 +1,11 @@
 ---
 name: verify-docs-before-pr
-description: Verify README.md and CLAUDE.md are updated when opening a PR
+description: Use before opening a PR or pushing in the meta-repo, to check that README.md / CLAUDE.md / other docs were updated alongside changes to .claude/, plugins/, agents/, rules/, submodule refs or dependencies. A manual pre-flight for the check-docs-sync.sh hook.
 ---
 
-Check if documentation is in sync with code changes before creating a pull request.
+Check whether documentation is in sync with the branch's changes before opening a pull request.
 
-Detects if critical files changed (`.claude/` config/skills/hooks, `plugins/`, `agents/`, `rules/`, dependencies) without corresponding `README.md` or `CLAUDE.md` updates.
-
-Run this before `/open-pull-request` to catch out-of-sync docs.
+The `.claude/hooks/check-docs-sync.sh` hook already runs this check on `gh pr create` / `git push` and blocks on failure, so this skill is a pre-flight: run it to find out before the hook stops you.
 
 ## Usage
 
@@ -15,27 +13,32 @@ Run this before `/open-pull-request` to catch out-of-sync docs.
 /verify-docs-before-pr
 ```
 
-## What It Checks
+Runs `.claude/verify-docs.sh` from the repo root.
 
-- `.claude/` config + skills + hooks changes
-- `plugins/` modifications
-- `agents/` changes
-- `rules/` updates
-- `muuvie/` or `backend/` structure changes
-- Dependency updates (`package.json`, gradle, `pubspec.yaml`, `Gemfile`, `.env`, docker)
+## What it checks
+
+The branch's changes against its base (`git diff <base>...HEAD`), where the base is:
+
+| Current branch | Base |
+|---|---|
+| `release/*`, `dev`, `develop`, `main` | `main` |
+| anything else (`feature/*`, `fix/*`, …) | `dev`, falling back to `develop` (local first, then `origin/`) |
+
+If any of these changed:
+
+- `.claude/` config, skills, hooks, commands
+- `plugins/`, `agents/`, `rules/`
+- the `muuvie` or `backend` submodule refs
+- dependencies or setup (`package.json`, gradle, `pubspec.yaml`, `Gemfile`, `.env`, docker)
+
+…then at least one doc must have changed too: a `README.md` or `CLAUDE.md` (any level), or a Markdown file under `agents/`, `rules/`, `.claude/` or `research/`.
 
 ## Output
 
-✓ **Pass** — Documentation is in sync. Safe to open PR.
+- **Pass:** exit 0, usually silent (or "No changes detected" / "no base ref … skipping").
+- **Fail:** exit 1, printing `⚠️  Documentation out of sync` and the critical files that changed. Update the docs that describe those files, then re-run.
 
-⚠️ **Fail** — Documentation out of sync. Update README.md and/or CLAUDE.md before creating PR.
+## What it does not check
 
----
-
-## Implementation
-
-This skill wraps `.claude/verify-docs.sh`, which:
-1. Compares current branch against main
-2. Detects critical file changes
-3. Verifies docs were updated
-4. Reports violations with file list
+- Whether the docs you changed are the *right* ones, or accurate. It only checks that some doc moved with the code.
+- The feature map. A branch that moves a submodule ref or edits `.claude/skills/muuvie-feature-map/` is checked separately by `.claude/hooks/check-feature-map.sh` (run `.claude/skills/muuvie-feature-map/bin/feature-map-check --strict` to pre-flight it).

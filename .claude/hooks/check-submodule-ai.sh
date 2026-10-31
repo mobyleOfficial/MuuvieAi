@@ -69,8 +69,9 @@ for submodule in $involved; do
 
   # List TRACKED files inside the submodule that match AI-tooling paths.
   # ls-files is git-aware and only returns files in the submodule's index.
+  # Matches at any depth, and archives of the config too (.claude.rar, .claude.zip).
   tracked=$(git -C "$submodule" ls-files 2>/dev/null || true)
-  matches=$(echo "$tracked" | grep -E '^(\.claude/|CLAUDE\.md$|\.cursorrules$|AGENTS\.md$|\.github/copilot-instructions\.md$)' || true)
+  matches=$(echo "$tracked" | grep -E '(^|/)(\.claude([/.]|$)|CLAUDE\.md$|\.cursorrules$|AGENTS\.md$|\.github/copilot-instructions\.md$)' || true)
 
   if [ -n "$matches" ]; then
     while IFS= read -r f; do

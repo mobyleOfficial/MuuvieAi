@@ -34,7 +34,7 @@ cp task/frontend/template.md task/frontend/requests/my-feature.md
 /pm-spec
 /architect-review research/specs/my-feature.md
 /implementer-tester
-/code-reviewer
+/review-pr <PR#>
 /validator
 ```
 
@@ -49,7 +49,7 @@ cp task/backend/template.md task/backend/requests/my-feature.md
 /pm-spec
 /architect-review research/specs/my-feature.md
 /backend-implementer
-/code-reviewer
+/review-pr <PR#>
 /validator
 ```
 
@@ -64,7 +64,7 @@ Both frontend and backend follow the same 6-stage pipeline:
 | **1. Spec** | `pm-spec` | `task/{type}/requests/` | `research/specs/` | Write detailed specification |
 | **2. Review** | `architect-review` | `research/specs/` | `research/reviews/` | Feasibility & alignment review |
 | **3. Implement** | `implementer-tester` or `backend-implementer` | `research/specs/` | Code in submodule | Build feature with tests |
-| **4. Code Review** | `code-reviewer` | Generated code | `research/reviews/` | Quality & pattern review |
+| **4. Code Review** | `reviewer` | Generated code | `research/reviews/` | Quality & pattern review |
 | **5. Validate** | `validator` | Generated code | Report | Pre-merge validation |
 
 ## Key Differences
@@ -215,7 +215,7 @@ See [task/backend/template.md](backend/template.md) — Focus on:
    → Creates endpoint (Ktor routing)
 
 5. Code review:
-   → /code-reviewer
+   → /review-pr <PR#>
    → Validates DI registration, suspend functions, patterns
    → Creates research/reviews/top-rated-endpoint-code-review.md
 

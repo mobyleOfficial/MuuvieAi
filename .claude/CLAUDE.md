@@ -35,7 +35,7 @@ Per-agent hooks (defined in pipeline-agent frontmatter): `validate-spec.sh`, `va
 - **`Plan`** — implementation strategy for multi-step tasks.
 - **`general-purpose`** — open-ended research or multi-step work.
 - **`claude-code-guide`** — questions about Claude Code (CLI, Agent SDK, Anthropic API).
-- Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `ultimate-developer`, `researcher`, `backend-implementer`) — for the feature-development pipeline. Invoked via `/agents/<name>.md` flow.
+- Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `ultimate-developer`, `researcher`, `backend-implementer`, `feature-mapper`) — for the feature-development pipeline. Invoked via `/agents/<name>.md` flow.
 
 Spawning a subagent costs more than reading files inline. Spawn only when the task spans multiple files / multiple search angles, when context window protection matters, or when an explicit agent type fits the task.
 
