@@ -14,11 +14,11 @@ Source root: `backend/src/main/kotlin/org/mobyle/`. Sub-packages:
 - `domain/repository/` — Repository interfaces consumed by use cases
 - `domain/usecase/` — Use case classes; sub-packages by feature (`movies/`, `profile/`, `activities/`)
 - `data/repository/` — Repository implementations (delegate to `TmdbDataSource`)
-- `data/remote/` — `TmdbDataSource` interface, `TmdbDataSourceImpl`, and `Mappers.kt` (TMDB DTO → domain)
+- `data/remote/<source>/` — one folder per external source (`tmdb/`, `filmow/`, …): data source interface + implementation, DTOs and mappers (`data/remote/tmdb/Mappers.kt`: TMDB DTO → domain)
 - `data/remote/model/` — TMDB DTO types (`@Serializable` data classes with `@SerialName`)
 - `data/di/` — `dataModule`: `HttpClient`, `TmdbDataSource`, and repository `single {}` bindings
 
-The test tree is prescribed to mirror `main/` exactly; create `backend/src/test/kotlin/org/mobyle/` before adding test files (no `src/test/kotlin/` exists today).
+The test tree, `backend/src/test/kotlin/org/mobyle/`, mirrors `main/`.
 
 ## Routing
 
@@ -68,6 +68,6 @@ fun Route.getMoviesRouting() {
 - Single `HttpClient(CIO)` registered as a Koin `single` in `dataModule`; Bearer token and base URL configured globally via `defaultRequest { url("https://api.themoviedb.org/3/"); headers.append(HttpHeaders.Authorization, "Bearer $apiKey") }`
 - All TMDB HTTP calls are encapsulated in `TmdbDataSourceImpl`; use cases and repositories never call `HttpClient` directly
 - TMDB DTOs live in `data/remote/model/TmdbResponses.kt` — all `@Serializable` with `@SerialName` for snake_case fields
-- Mapper extension functions in `data/remote/Mappers.kt` convert TMDB DTOs to domain/model types; repositories call `.toDomain()` before returning results
+- Mapper extension functions in `data/remote/tmdb/Mappers.kt` convert TMDB DTOs to domain/model types; repositories call `.toDomain()` before returning results
 - JSON deserialization uses `kotlinx.serialization` with `ignoreUnknownKeys = true` and `isLenient = true` to tolerate TMDB API changes
 - Use case `invoke` functions use `runBlocking { repository.suspend_fun() }` rather than being `suspend` themselves — this is the current pattern; new use cases must follow it until the calling layer is made coroutine-aware. **Known performance cost (technical debt):** `runBlocking` inside a Ktor route handler parks one of Ktor's worker threads for the duration of the blocking call, reducing concurrent request throughput; under load this can lead to thread starvation. The pattern is tolerable here because (a) most routes do a single TMDB call (one block per request), (b) Ktor's default `Netty` event loop has enough workers for our throughput, and (c) introducing `suspend` use cases requires `suspend` route handlers + `coroutineScope { }` plumbing across `Main.kt`. Migrating to `suspend` end-to-end is the right long-term direction (file the refactor under `research/decisions/` before doing it); until then, new code MUST match the existing pattern so the codebase doesn't have two competing async models in flight at once.

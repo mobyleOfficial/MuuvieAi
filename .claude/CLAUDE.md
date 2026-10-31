@@ -27,7 +27,7 @@ Project-level hooks defined in `.claude/settings.json`:
 | `PreToolUse` Bash | `.claude/hooks/check-feature-map.sh` | Blocks `gh pr create` / `git push` when a branch moving a submodule ref or editing the feature map leaves `feature-map-check --strict` failing |
 | `PostToolUse` Edit/Write | `.claude/hooks/format-code.sh` | Runs `dart format` on `.dart` files (no-op on others) |
 
-Per-agent hooks (defined in pipeline-agent frontmatter): `validate-spec.sh`, `validate-implementation.sh`, `validate-localization.sh`, `validate-module-structure.sh`, `verify-di-registration.sh`, `regenerate-generated-files.sh`, `pipeline-coordinator.sh`, `human-gate-review.sh`, `enforce-path-restrictions.sh`, `block-cross-feature-data-imports.sh`. All live in `.claude/hooks/`.
+Per-agent hooks are declared in the `hooks:` frontmatter of `.claude/agents/{implementer-tester,backend-implementer,pm-spec,architect-review}.md` and run only while that agent is active. See [`.claude/hooks/README.md` § 2](hooks/README.md) for the table, and for the scripts that are run by hand (`pipeline-coordinator.sh`, `validate-audit-only.sh`). All hooks source `.claude/hooks/lib-hook.sh` and are tested by `npm run test:hooks`.
 
 ## Subagent Dispatch
 
@@ -35,7 +35,7 @@ Per-agent hooks (defined in pipeline-agent frontmatter): `validate-spec.sh`, `va
 - **`Plan`** — implementation strategy for multi-step tasks.
 - **`general-purpose`** — open-ended research or multi-step work.
 - **`claude-code-guide`** — questions about Claude Code (CLI, Agent SDK, Anthropic API).
-- Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `ultimate-developer`, `researcher`, `backend-implementer`, `feature-mapper`) — for the feature-development pipeline. Invoked via `/agents/<name>.md` flow.
+- Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `ultimate-developer`, `researcher`, `backend-implementer`, `feature-mapper`) — for the feature-development pipeline. Dispatched with the Agent tool's `subagent_type`; definitions live in `.claude/agents/`.
 
 Spawning a subagent costs more than reading files inline. Spawn only when the task spans multiple files / multiple search angles, when context window protection matters, or when an explicit agent type fits the task.
 

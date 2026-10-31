@@ -49,7 +49,7 @@ di_sources=$(grep -rlE --include='*.dart' --exclude-dir=.dart_tool --exclude-dir
 [ -z "$di_sources" ] && exit 0
 
 regen="Regenerate it from muuvie/: dart run build_runner build --delete-conflicting-outputs
-(never edit it by hand; see the DI checklist in agents/implementer-tester.md)."
+(never edit it by hand; see the DI checklist in .claude/agents/implementer-tester.md)."
 
 if [ ! -f "$config" ]; then
   echo "Blocked: muuvie/lib/di/injection.config.dart is missing, so GetIt has no registrations. $regen" >&2

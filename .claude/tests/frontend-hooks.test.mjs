@@ -185,7 +185,7 @@ test('enforce-path-restrictions: implementer-tester may write only its allowed m
     'muuvie/android/app/build.gradle',
     'muuvie/README.md',
     'CLAUDE.md',
-    'agents/implementer-tester.md',
+    '.claude/agents/implementer-tester.md',
     'backend/src/main/kotlin/App.kt',
     'muuvie/lib/../secrets/.env',
     'muuvie/lib/new_dir/../../secrets/.env',
@@ -220,10 +220,10 @@ test('enforce-path-restrictions: other agents, missing agent and non-path tools 
   assert.equal(bash.status, 0);
 });
 
-test('enforce-path-restrictions: allowlists match the "Allowed Paths" in agents/*.md', () => {
+test('enforce-path-restrictions: allowlists match the "Allowed Paths" in .claude/agents/*.md', () => {
   const { root } = fixture();
   for (const agent of ['implementer-tester', 'backend-implementer']) {
-    const doc = readFileSync(join(META_ROOT, 'agents', `${agent}.md`), 'utf8');
+    const doc = readFileSync(join(META_ROOT, '.claude', 'agents', `${agent}.md`), 'utf8');
     const section = doc.split('## Allowed Paths')[1].split('\n## ')[0];
     const entries = [...section.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
     assert.ok(entries.length > 0, `${agent}: no Allowed Paths entries`);

@@ -1,6 +1,6 @@
 ---
 name: verify-docs-before-pr
-description: Use before opening a PR or pushing in the meta-repo, to check that README.md / CLAUDE.md / other docs were updated alongside changes to .claude/, plugins/, agents/, rules/, submodule refs or dependencies. A manual pre-flight for the check-docs-sync.sh hook.
+description: Use before opening a PR or pushing in the meta-repo, to check that README.md / CLAUDE.md / other docs were updated alongside changes to .claude/, plugins/, .claude/agents/, rules/, submodule refs or dependencies. A manual pre-flight for the check-docs-sync.sh hook.
 ---
 
 Check whether documentation is in sync with the branch's changes before opening a pull request.
@@ -22,16 +22,16 @@ The branch's changes against its base (`git diff <base>...HEAD`), where the base
 | Current branch | Base |
 |---|---|
 | `release/*`, `dev`, `develop`, `main` | `main` |
-| anything else (`feature/*`, `fix/*`, …) | `dev`, falling back to `develop` (local first, then `origin/`) |
+| anything else (`feature/*`, `fix/*`, …) | `dev`, falling back to `develop` (`origin/` first, then the local branch) |
 
 If any of these changed:
 
 - `.claude/` config, skills, hooks, commands
-- `plugins/`, `agents/`, `rules/`
+- `plugins/`, `.claude/agents/`, `rules/`
 - the `muuvie` or `backend` submodule refs
 - dependencies or setup (`package.json`, gradle, `pubspec.yaml`, `Gemfile`, `.env`, docker)
 
-…then at least one doc must have changed too: a `README.md` or `CLAUDE.md` (any level), or a Markdown file under `agents/`, `rules/`, `.claude/` or `research/`.
+…then at least one doc must have changed too: a `README.md` or `CLAUDE.md` (any level), or a Markdown file under `.claude/agents/`, `rules/`, `.claude/` or `research/`.
 
 ## Output
 

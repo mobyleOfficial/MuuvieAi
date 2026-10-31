@@ -25,7 +25,7 @@ MuuvieAi/
 ├── rules/            # Ecosystem policies + lint rules
 ├── patches/          # npm patches applied by patch-package on install
 ├── .claude/commands/ # Slash commands (/new-usecase, /review-pr, /ultimate-feature, ...)
-├── agents/           # Pipeline + reviewer agents (auto-discovered Markdown)
+├── .claude/agents/           # Pipeline + reviewer agents (auto-discovered Markdown)
 ├── .claude/skills/   # Project-level Claude Code skills (auto-discovered), incl. the feature map
 ├── .claude/hooks/    # Pre/Post/SessionStart hooks enforcing rules
 ├── .claude/CLAUDE.md # Claude/tooling-specific behavior (companion to this file)
@@ -170,7 +170,7 @@ Project-level Claude Code skills, auto-discovered each session from `.claude/ski
 - `verify-docs-before-pr` — Documentation verification before opening a PR
 - `muuvie-feature-map` — Map of every user-facing feature across both submodules, checked by `bin/feature-map-check`
 
-### `agents/`
+### `.claude/agents/`
 Auto-discovered Markdown agent definitions (no registration needed). Dispatched via the `Task` tool's `subagent_type` parameter.
 
 **Pipeline agents** (feature development):
@@ -214,7 +214,13 @@ Pre/Post/SessionStart hooks wired in `.claude/settings.json`. Flat directory —
 
 **Always-on** (wired in `settings.json`): `session-start.sh`, `block-destructive-commands.sh`, `check-coauthor.sh`, `check-python-env.sh`, `check-submodule-ai.sh`, `check-docs-sync.sh`, `check-feature-map.sh`, `format-code.sh`.
 
-**Per-agent** (referenced from pipeline-agent frontmatter): `validate-spec.sh`, `validate-audit-only.sh`, `enforce-path-restrictions.sh`, `human-gate-review.sh`, `pipeline-coordinator.sh`, `block-cross-feature-data-imports.sh`, `regenerate-generated-files.sh`, `validate-implementation.sh`, `validate-localization.sh`, `validate-module-structure.sh`, `verify-di-registration.sh`, `validate-backend-structure.sh`, `validate-kotlin-code.sh`, `verify-koin-di-registration.sh`.
+**Per-agent** (declared in the `hooks:` frontmatter of the agent they guard):
+- `implementer-tester`: `enforce-path-restrictions.sh`, `block-cross-feature-data-imports.sh`, `validate-implementation.sh` (runs `regenerate-generated-files.sh` and `verify-di-registration.sh`), `validate-localization.sh`, `validate-module-structure.sh`
+- `backend-implementer`: `enforce-path-restrictions.sh`, `validate-backend-structure.sh`, `validate-kotlin-code.sh`, `verify-koin-di-registration.sh`
+- `pm-spec`: `validate-spec.sh`; `architect-review`: `human-gate-review.sh`
+- Run by hand: `pipeline-coordinator.sh <agent>` (manual queue), `validate-audit-only.sh` (used by `ultimate-developer`)
+
+`lib-hook.sh` holds the helpers every hook sources. Tests: `npm run test:hooks` runs each hook under macOS's bash 3.2 with crafted hook JSON.
 
 ---
 
@@ -267,7 +273,7 @@ Pre/Post/SessionStart hooks wired in `.claude/settings.json`. Flat directory —
 3. Implements code in the relevant submodule(s), opens a PR per submodule, drives review loops, merges
 4. Bumps submodule refs if cross-repo
 
-All phase docs live under `research/features/<slug>/`. See `agents/ultimate-developer.md` and `research/features/ultimate-developer/spec.md` for the full design.
+All phase docs live under `research/features/<slug>/`. See `.claude/agents/ultimate-developer.md` and `research/features/ultimate-developer/spec.md` for the full design.
 
 ---
 
@@ -398,7 +404,7 @@ Lint rules (Flutter-side, applied by `implementer-tester` agent): `accessibility
 - `/ultimate-feature "<request>"` — runs the `ultimate-developer` agent for autonomous end-to-end feature delivery
 - `/map-features` — runs `feature-mapper` agents to repair the feature map after a submodule ref moves
 
-**5. Agents** — dispatched via the `Task` tool's `subagent_type` parameter, auto-discovered from `agents/`:
+**5. Agents** — dispatched via the `Task` tool's `subagent_type` parameter, auto-discovered from `.claude/agents/`:
 - `implementer-tester` — Flutter/Dart feature implementation
 - `backend-implementer` — Kotlin/Ktor backend feature implementation
 - `architect-review` — spec feasibility review

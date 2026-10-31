@@ -18,7 +18,7 @@ The invoking message must specify a PR number (e.g. "review PR #12") or a PR URL
 - Repo: `mobyleOfficial/MuuvieAi`
 - Main: `main` (release target)
 - Default base: `develop`
-- Reviewers live at `agents/reviewers/{security,bug-finder,architecture}.md`
+- Reviewers live at `.claude/agents/reviewers/{security,bug-finder,architecture}.md`
 - Project rules: `rules/` (especially `NO_COAUTHORS`, `LOCAL_CLAUDE_CONFIG`, `PYTHON_ENVS`, `AI_AGNOSTIC_SUBMODULES`)
 - Audit reference: `research/2026-05-15-claude-config-audit.md`
 
@@ -88,14 +88,14 @@ After your own review pass posts new comments and the next round of fixes lands,
 Dispatch three subagents in a single message (parallel `Task` tool calls). Each receives:
 
 - The full PR diff (passed as text)
-- The corresponding role prompt from `agents/reviewers/<role>.md`
+- The corresponding role prompt from `.claude/agents/reviewers/<role>.md`
 - Instruction to return STRICT JSON exactly as that prompt defines
 
 The three roles:
 
-1. **Security Reviewer** — `agents/reviewers/security.md`
-2. **Bug Finder** — `agents/reviewers/bug-finder.md`
-3. **Architecture Reviewer** — `agents/reviewers/architecture.md`
+1. **Security Reviewer** — `.claude/agents/reviewers/security.md`
+2. **Bug Finder** — `.claude/agents/reviewers/bug-finder.md`
+3. **Architecture Reviewer** — `.claude/agents/reviewers/architecture.md`
 
 Each sub-reviewer must:
 

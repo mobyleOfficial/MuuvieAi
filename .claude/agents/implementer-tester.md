@@ -3,6 +3,22 @@ name: implementer-tester
 description: Implements Flutter/Dart features with tests across the multimodule structure. Use in the muuvie submodule after architect approves a spec.
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: sonnet
+hooks:
+  PreToolUse:
+    - matcher: "Edit|Write|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/enforce-path-restrictions.sh implementer-tester'
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/block-cross-feature-data-imports.sh'
+  Stop:
+    - hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-implementation.sh'
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-localization.sh'
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-module-structure.sh'
 ---
 
 # Flutter Implementer & Tester

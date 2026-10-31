@@ -55,7 +55,7 @@ See [NO_COAUTHORS.md](NO_COAUTHORS.md).
 - `CLAUDE.md` — AI guidance for this ecosystem
 - `plugins/` — MCP servers
 - `.claude/skills/` — AI workflows
-- `agents/` — Specialized Claude agents
+- `.claude/agents/` — Specialized Claude agents
 - Setup/onboarding docs for AI tools
 
 ## Checking Compliance

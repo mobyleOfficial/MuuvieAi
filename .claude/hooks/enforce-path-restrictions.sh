@@ -8,7 +8,7 @@
 #   .claude/hooks/enforce-path-restrictions.sh backend-implementer
 # Any other agent name (or none) is a no-op.
 #
-# The allowlists mirror the "Allowed Paths" section of agents/<agent>.md
+# The allowlists mirror the "Allowed Paths" section of .claude/agents/<agent>.md
 # (pinned by .claude/tests/frontend-hooks.test.mjs). Paths are matched
 # relative to the meta-repo root, found from the file's own directory: its git
 # toplevel, then that repo's superproject while it is a submodule. Written for
@@ -82,7 +82,7 @@ if [ "$agent" = implementer-tester ]; then
       muuvie/pubspec.yaml | muuvie/analysis_options.yaml | muuvie/l10n.yaml)
       exit 0 ;;
   esac
-  deny "$rel is outside the allowed paths: muuvie/{features,ui,lib,test}/**, muuvie/pubspec.yaml, muuvie/analysis_options.yaml, muuvie/l10n.yaml (agents/implementer-tester.md)."
+  deny "$rel is outside the allowed paths: muuvie/{features,ui,lib,test}/**, muuvie/pubspec.yaml, muuvie/analysis_options.yaml, muuvie/l10n.yaml (.claude/agents/implementer-tester.md)."
 fi
 
 # backend-implementer
@@ -90,4 +90,4 @@ case "$rel" in
   backend/src/main/kotlin/* | backend/src/test/kotlin/* | backend/build.gradle.kts)
     exit 0 ;;
 esac
-deny "$rel is outside the allowed paths: backend/src/main/kotlin/**, backend/src/test/kotlin/**, backend/build.gradle.kts (agents/backend-implementer.md)."
+deny "$rel is outside the allowed paths: backend/src/main/kotlin/**, backend/src/test/kotlin/**, backend/build.gradle.kts (.claude/agents/backend-implementer.md)."

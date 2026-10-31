@@ -17,7 +17,7 @@ These rules fire automatically on every applicable action.
 
 ## Flutter / Submodule-scoped Rules (per-agent enforcement)
 
-These rules apply when working inside the `muuvie/` submodule. They are enforced by the `implementer-tester` agent, whose `Stop` hook chain runs `flutter analyze` + `flutter test` + structural validators. Hook scripts live in `.claude/hooks/` but are not project-wide.
+These rules apply when working inside the `muuvie/` submodule. They are enforced by hooks in the `implementer-tester` agent's frontmatter (`.claude/agents/implementer-tester.md`): `PreToolUse` hooks stop writes outside its allowed paths and cross-feature `data/` imports, and `Stop` hooks run `flutter analyze` + `flutter test` + structural validators on what the agent changed. They run only while that agent is active.
 
 | Rule | Enforcement |
 |------|-------------|
@@ -31,13 +31,13 @@ These rules apply when working inside the `muuvie/` submodule. They are enforced
 
 ## Backend / Submodule-scoped Rules (per-agent enforcement)
 
-These rules apply when working inside the `backend/` submodule. They are enforced by the `backend-implementer` agent and the `reviewers/architecture` sub-reviewer.
+These rules apply when working inside the `backend/` submodule. They are enforced by hooks in the `backend-implementer` agent's frontmatter — a path allowlist on writes, and `Stop` checks on the changed `.kt` files (`validate-backend-structure.sh`, `validate-kotlin-code.sh`, `verify-koin-di-registration.sh`) — and by the `reviewers/architecture` sub-reviewer.
 
 (Scope column added for backend rules to disambiguate submodule vs. subdirectory enforcement.)
 
 | Rule | Scope | Enforcement |
 |------|-------|-------------|
-| [backend-architecture](backend/backend-architecture.md) | `backend/` submodule | `backend-implementer` agent + reviewer architecture sub-reviewer |
+| [backend-architecture](backend/backend-architecture.md) | `backend/` submodule | `validate-backend-structure.sh` + `verify-koin-di-registration.sh` (backend-implementer Stop) + reviewer architecture sub-reviewer |
 | [backend-testing](backend/backend-testing.md) | `backend/src/test/` | `backend-implementer` agent (test scaffolding) |
 
 See [`.claude/hooks/README.md`](../.claude/hooks/README.md) for the full registration model.

@@ -50,11 +50,11 @@ DOCS_MODIFIED=0
 
 # Check if any documentation file was modified. Per rules/DOCS_UP_TO_DATE.md
 # a doc update can land in README/CLAUDE.md (root or subdir), an agent spec
-# (agents/*.md), a rule definition (rules/*.md), a skill (.claude/skills/),
+# (.claude/agents/*.md), a rule definition (rules/*.md), a skill (.claude/skills/),
 # a hook README, or the audit/research docs (research/*.md). Any .md change
 # under those paths satisfies the rule — the underlying intent is that human-
 # readable behavior documentation stays in sync with code.
-if echo "$CHANGED_FILES" | grep -qE '(^|/)(README|CLAUDE)\.md$|^agents/.*\.md$|^rules/.*\.md$|^\.claude/.*\.md$|^research/.*\.md$'; then
+if echo "$CHANGED_FILES" | grep -qE '(^|/)(README|CLAUDE)\.md$|^.claude/agents/.*\.md$|^rules/.*\.md$|^\.claude/.*\.md$|^research/.*\.md$'; then
   DOCS_MODIFIED=1
 fi
 
@@ -62,7 +62,7 @@ fi
 CRITICAL_CHANGES=(
   "^\.claude/"                          # Claude config + skills + hooks
   "^plugins/"                           # Plugin changes
-  "^agents/"                            # Agents changes
+  "^.claude/agents/"                            # Agents changes
   "^rules/"                             # Rules changes
   "^muuvie(/|$)" "^backend(/|$)"        # Submodule refs and structure
 )
@@ -84,7 +84,7 @@ if [ "$HAS_CRITICAL_CHANGE" -eq 1 ] && [ "$DOCS_MODIFIED" -eq 0 ]; then
   echo "⚠️  Documentation out of sync"
   echo ""
   echo "Critical files changed:"
-  echo "$CHANGED_FILES" | grep -iE "^\.claude/|^plugins/|^agents/|^rules/|^muuvie|^backend|package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker" | sed 's/^/  - /'
+  echo "$CHANGED_FILES" | grep -iE "^\.claude/|^plugins/|^.claude/agents/|^rules/|^muuvie|^backend|package\.json|gradle|pubspec\.yaml|Gemfile|\.env|docker" | sed 's/^/  - /'
   echo ""
   echo "README.md and/or CLAUDE.md should be updated."
   echo "Update docs before opening PR to keep team in sync."

@@ -3,6 +3,20 @@ name: backend-implementer
 description: Implements Kotlin/Ktor backend features with tests. Use in the backend submodule after architect approves a spec.
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill
 model: sonnet
+hooks:
+  PreToolUse:
+    - matcher: "Edit|Write|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/enforce-path-restrictions.sh backend-implementer'
+  Stop:
+    - hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-backend-structure.sh'
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-kotlin-code.sh'
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/verify-koin-di-registration.sh'
 ---
 
 # Kotlin/Ktor Implementer & Tester
@@ -54,16 +68,18 @@ backend/src/main/kotlin/org/mobyle/
 ├── domain/
 │   ├── model/          — Domain models (pure Kotlin, no dependencies)
 │   ├── repository/     — Repository contracts (interface only)
-│   └── usecase/        — Business logic with operator fun invoke()
+│   ├── policy/         — Domain rules shared by use cases
+│   └── usecase/<feature>/ — Business logic with operator fun invoke(), one folder per feature
 ├── data/
-│   ├── remote/         — HTTP datasources (Ktor client implementations)
+│   ├── remote/<source>/ — HTTP datasources (tmdb/, filmow/, …), DTOs and mappers (e.g. remote/tmdb/Mappers.kt)
+│   ├── local/<feature>/ — Exposed tables and local datasources
 │   ├── repository/     — Repository implementations (DTO → domain mapping)
-│   ├── di/             — Data layer Koin modules
-│   └── model/          — Data transfer objects (@Serializable DTOs)
-├── presentation/
-│   ├── routing/        — Ktor API endpoints and route extensions
-│   └── di/             — Presentation layer Koin modules
-└── Application.kt      — Ktor app configuration, routing setup
+│   ├── service/        — Background services
+│   └── di/DataModule.kt — Data layer Koin module
+├── routing/            — Ktor endpoints, one <Feature>Routing.kt each, mounted in ApiSurface.kt
+├── di/AppModule.kt     — Use case Koin module
+├── model/              — Shared API models
+└── Main.kt             — Ktor entry point and configuration (there is no Application.kt)
 
 backend/src/test/kotlin/org/mobyle/
 └── Mirrors main/ structure for unit tests
@@ -109,7 +125,7 @@ You may only edit/create under: `backend/src/main/kotlin/**`, `backend/src/test/
 ### Repository Pattern
 - **Domain interface** — Pure contract, no implementation, suspend functions
 - **Data implementation** — Uses datasource, maps DTO → domain via `.toDomain()` extensions
-- **Mapper extensions** — Define in `data/remote/Mappers.kt` for reusability
+- **Mapper extensions** — Define next to the source's DTOs (e.g. `data/remote/tmdb/Mappers.kt`) for reusability
 - Example interface:
   ```kotlin
   interface MoviesRepository {
@@ -165,7 +181,7 @@ You may only edit/create under: `backend/src/main/kotlin/**`, `backend/src/test/
   ```
 
 ### Dependency Injection (Koin)
-- **Modules in `di/` layers** — Separate data and presentation modules
+- **Koin modules** — use cases in `di/AppModule.kt`, data sources and repositories in `data/di/DataModule.kt`
 - **DataModule** — Registers datasources and repositories
 - **AppModule** — Registers usecases
 - **Lazy delegation** — `by inject<T>(T::class.java)` in routing
@@ -193,7 +209,7 @@ You may only edit/create under: `backend/src/main/kotlin/**`, `backend/src/test/
 4. Implement in dependency order: datasource → repository → usecase → endpoint → tests
 5. Use scaffolding skills (`/new-kotlin-*`) for each layer
 6. Update Koin modules (DataModule, AppModule) with new registrations
-7. Wire routing in `Application.kt`
+7. Wire routing: add the `get<Feature>Routing()` call to `routing/ApiSurface.kt` (mounted under `/api/v1` in `Main.kt`)
 8. Run `./gradlew test` to verify everything works
 9. In your final report, list the feature-map pages your change makes untrue (new, removed or renamed endpoints; changed auth, validation or responses). The map lives in the meta-repo, not in `backend/`; it is updated in the meta-repo PR that bumps the submodule ref (`rules/common/FEATURE_MAP.md`).
 

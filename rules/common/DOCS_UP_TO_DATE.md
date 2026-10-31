@@ -14,7 +14,7 @@ A change touches docs if it modifies any of:
 
 - `.claude/` config, skills, hooks, or agents
 - `plugins/`
-- `agents/`
+- `.claude/agents/`
 - `rules/`
 - Public APIs in `muuvie/` or `backend/` (request/response shape, exported types, public functions)
 - Build / setup commands (any `package.json`, `gradle`, `pubspec.yaml`, `Gemfile`, `.env`, docker)

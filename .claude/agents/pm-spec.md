@@ -3,6 +3,11 @@ name: pm-spec
 description: Product manager that writes feature specifications and design documents for the MuuvieAi ecosystem.
 tools: Write, Read, Glob
 model: sonnet
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-spec.sh'
 ---
 
 # Product Manager / Spec Writer

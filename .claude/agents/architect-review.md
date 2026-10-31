@@ -3,6 +3,11 @@ name: architect-review
 description: Technical architect that reviews feature proposals for feasibility against ecosystem architecture.
 tools: Read, Write, Grep, Glob
 model: sonnet
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/human-gate-review.sh'
 ---
 
 # Technical Architect

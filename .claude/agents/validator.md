@@ -181,13 +181,13 @@ The `reviewer` agent already implements the full pipeline (parallel sub-reviewer
 
 **Invariant:** `validator` MUST only dispatch the `reviewer` subagent in PR mode. The `Task` tool is present solely for this delegation. Do not call `Task` with any other `subagent_type` from `validator`. Violating this rule reintroduces the duplication this design avoids and bypasses the read-only stance of `validator`.
 
-**Mirror invariant on the other side:** `reviewer` MUST NOT dispatch back to `validator`. This avoids a dispatch cycle. See `agents/reviewer.md`.
+**Mirror invariant on the other side:** `reviewer` MUST NOT dispatch back to `validator`. This avoids a dispatch cycle. See `.claude/agents/reviewer.md`.
 
 ```
 Task({
   subagent_type: "reviewer",
   description: "Inline-comment PR #<N>",
-  prompt: "Review PR #<N> on mobyleOfficial/MuuvieAi following the workflow in agents/reviewer.md. Run the three sub-reviewers in parallel, validate findings (≥0.6 confidence cutoff), deduplicate against any existing comments, and post net-new findings as inline review comments. Re-review aware: mark resolved threads. Return the STRICT JSON summary."
+  prompt: "Review PR #<N> on mobyleOfficial/MuuvieAi following the workflow in .claude/agents/reviewer.md. Run the three sub-reviewers in parallel, validate findings (≥0.6 confidence cutoff), deduplicate against any existing comments, and post net-new findings as inline review comments. Re-review aware: mark resolved threads. Return the STRICT JSON summary."
 })
 ```
 
