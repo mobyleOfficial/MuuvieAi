@@ -1,91 +1,185 @@
 #!/bin/bash
-# hooks/backend/validate-kotlin-code.sh
-# Validates Kotlin code follows backend-implementation.md patterns.
-# Checks for common mistakes: blocking coroutines, Result wrappers, wrong DI patterns.
-# Define this as a Stop hook in the backend-implementer agent's frontmatter.
+# .claude/hooks/validate-kotlin-code.sh
+# Stop hook for the backend-implementer agent (SubagentStop when declared in
+# the agent's frontmatter). Judges the main-source Kotlin files the change
+# touched in the backend submodule against rules/backend/backend-implementation.md:
+#
+#   - no Thread.sleep() inside a suspend function, nor anywhere in routing/
+#     (route handlers are suspend lambdas)
+#   - runBlocking only to bridge non-suspend code to suspend code: never inside
+#     a suspend function, never in routing/. Use case invoke() bridges and
+#     non-suspend data-layer methods (e.g. MaratonaCatalogImpl) are allowed.
+#   - no Future / CompletableFuture / FutureTask: expose suspend funs
+#   - no Koin imports in domain/ or data/ outside data/di/ (no service locator;
+#     constructor injection only)
+#
+# Tests (src/test) are not judged: runBlocking { } test bodies are idiomatic.
+# "Touched" = .kt files changed in backend/: uncommitted (staged, unstaged,
+# untracked) plus commits ahead of origin/dev. Nothing touched -> exit 0.
+# BACKEND_HOOK_SCOPE=all judges every tracked + untracked .kt file instead.
+#
+# Exit 2 with the problems on stderr (fed back to the agent); exit 0 otherwise.
+# Exits 0 when stop_hook_active is true, so a failing check cannot loop.
+# bash 3.2 compatible; awk is the BSD/POSIX subset.
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
 
-input=$(cat)
+# --- shared backend-hook preamble (kept identical across the three backend hooks) ---
+hook_read_input
+[ "$(printf '%s' "$HOOK_INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)" = true ] && exit 0
 
-# Check if we're in backend directory
-if ! grep -q "backend" <<< "$(pwd)"; then
-  exit 0
-fi
+# Resolves <meta>/backend from the session cwd (meta root, backend/ or any
+# other submodule). Sets BACKEND or exits 0 when there is no backend checkout.
+resolve_backend() {
+  local top super meta real
+  top=$(git -C "$HOOK_CWD" rev-parse --show-toplevel 2>/dev/null) || exit 0
+  super=$(git -C "$top" rev-parse --show-superproject-working-tree 2>/dev/null)
+  meta=${super:-$top}
+  if [ ! -d "$meta/backend" ] && [ "$(basename "$top")" = backend ]; then
+    meta=$(dirname "$top")
+  fi
+  [ -d "$meta/backend" ] || exit 0
+  BACKEND=$(cd "$meta/backend" && pwd -P)
+  # An uninitialised submodule is an empty directory inside the meta repo.
+  real=$(git -C "$BACKEND" rev-parse --show-toplevel 2>/dev/null)
+  [ "$real" = "$BACKEND" ] || exit 0
+}
 
-file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null || echo "")
+# Prints the .kt files (relative to backend/) the change touched.
+bgit() { git -c core.quotepath=off -C "$BACKEND" "$@"; }
+changed_kt_files() {
+  if [ "${BACKEND_HOOK_SCOPE:-}" = all ]; then
+    bgit ls-files --cached --others --exclude-standard -- '*.kt' 2>/dev/null
+  else
+    {
+      bgit diff --name-only --diff-filter=d -- '*.kt' 2>/dev/null
+      bgit diff --name-only --diff-filter=d --cached -- '*.kt' 2>/dev/null
+      bgit ls-files --others --exclude-standard -- '*.kt' 2>/dev/null
+      if bgit rev-parse -q --verify origin/dev >/dev/null 2>&1; then
+        bgit diff --name-only --diff-filter=d origin/dev...HEAD -- '*.kt' 2>/dev/null
+      fi
+    }
+  fi | sort -u | while IFS= read -r f; do
+    [ -f "$BACKEND/$f" ] && printf '%s\n' "$f"
+  done
+}
 
-if [ -z "$file_path" ] || [[ ! "$file_path" =~ \.kt$ ]]; then
-  exit 0
-fi
+resolve_backend
+CHANGED=$(changed_kt_files)
+[ -z "$CHANGED" ] && exit 0
+# --- end preamble ---
+
+# Scans one Kotlin file. Strings, char literals and comments are blanked first
+# so that braces and keywords inside them do not count. A line is "inside a
+# suspend function" from a `suspend fun` declaration through the end of its
+# body (brace-delimited, or a single-line / `=`-continued expression body).
+# Prints "<line>\t<message>" per problem.
+scan_kotlin() {
+  awk -v routing="$2" -v koin_banned="$3" '
+    function sanitize(s,   out, i, n, c, j, k, d) {
+      out = ""; n = length(s); i = 1
+      while (i <= n) {
+        if (inblock) {
+          j = index(substr(s, i), "*/")
+          if (j == 0) return out
+          inblock = 0; i += j + 1; continue
+        }
+        if (inraw) {
+          j = index(substr(s, i), "\"\"\"")
+          if (j == 0) return out
+          inraw = 0; i += j + 2; out = out "\"\""; continue
+        }
+        c = substr(s, i, 1)
+        if (c == "/" && substr(s, i + 1, 1) == "/") return out
+        if (c == "/" && substr(s, i + 1, 1) == "*") { inblock = 1; i += 2; continue }
+        if (substr(s, i, 3) == "\"\"\"") { inraw = 1; i += 3; continue }
+        if (c == "\"") {
+          k = i + 1
+          while (k <= n) {
+            d = substr(s, k, 1)
+            if (d == "\\") { k += 2; continue }
+            if (d == "\"") break
+            k++
+          }
+          out = out "\"\""; i = k + 1; continue
+        }
+        if (c == "\047") {
+          k = i + 1
+          if (substr(s, k, 1) == "\\") k += 2; else k += 1
+          while (k <= n && substr(s, k, 1) != "\047" && k - i < 8) k++
+          if (substr(s, k, 1) == "\047") { out = out "\047\047"; i = k + 1; continue }
+        }
+        out = out c; i++
+      }
+      return out
+    }
+    function report(msg) { printf "%d\t%s\n", NR, msg }
+    {
+      line = sanitize($0)
+      if (line ~ /^[ \t]*import[ \t]/) {
+        if (koin_banned && line ~ /^[ \t]*import[ \t]+org\.koin\./)
+          report("imports Koin (" substr(line, index(line, "org.koin")) ") outside the DI modules. Use constructor injection and register the class in a Koin module instead (rules/backend/backend-implementation.md § Constructor Injection).")
+        next
+      }
+
+      if (!active && !pending && line ~ /(^|[^A-Za-z0-9_])suspend([ \t]+(operator|inline|infix|override|open|final|abstract|tailrec|external|actual|expect|private|public|internal|protected))*[ \t]+fun([ \t]|$)/) {
+        pending = 1; start = depth; parens = 0
+      }
+      in_suspend = active || pending
+      n = length(line)
+      for (i = 1; i <= n; i++) {
+        c = substr(line, i, 1)
+        if (c == "(") parens++
+        else if (c == ")") parens--
+        else if (c == "{") {
+          depth++
+          if (pending && parens <= 0) { pending = 0; active = 1 }
+        } else if (c == "}") {
+          depth--
+          if (active && depth <= start) active = 0
+        }
+      }
+      # A declaration with no body (interface member) or a one-line expression
+      # body ends here unless its parameter list or `=` continues.
+      if (pending && parens <= 0 && line !~ /=[ \t]*$/) pending = 0
+
+      if (line ~ /(^|[^A-Za-z0-9_])Thread[ \t]*\.[ \t]*sleep[ \t]*\(/) {
+        if (routing) report("Thread.sleep() in routing. Route handlers run as coroutines; use kotlinx.coroutines.delay() instead.")
+        else if (in_suspend) report("Thread.sleep() inside a suspend function blocks the coroutine thread. Use kotlinx.coroutines.delay() instead.")
+      }
+      if (line ~ /(^|[^A-Za-z0-9_])runBlocking([ \t]*[({<]|[ \t]*$)/) {
+        if (routing) report("runBlocking in routing. Route handlers already run in a coroutine; call the use case directly (rules/backend/backend-implementation.md § runBlocking Only for Bridging).")
+        else if (in_suspend) report("runBlocking inside a suspend function. Call the suspend function directly; runBlocking is only for bridging non-suspend code (a use case invoke) to suspend code.")
+      }
+      if (line ~ /CompletableFuture|FutureTask|(^|[^A-Za-z0-9_])Future[ \t]*</)
+        report("Future/CompletableFuture. Expose a suspend fun instead (bridge a Java future with kotlinx.coroutines.future.await()).")
+    }
+  ' "$1"
+}
 
 errors=""
-warnings=""
-
-# ===== ERROR CHECKS (block) =====
-
-# Check for Thread.sleep() in suspend functions
-if grep -q "Thread.sleep" "$file_path"; then
-  if grep -B5 "Thread.sleep" "$file_path" | grep -q "suspend fun"; then
-    errors="$errors\nDO NOT use Thread.sleep() in suspend functions — use delay() or restructure"
-  fi
-fi
-
-# Check for runBlocking outside of usecase bridge
-if grep -q "runBlocking" "$file_path"; then
-  if ! [[ "$file_path" =~ domain/usecase/ ]]; then
-    errors="$errors\nrunBlocking should only appear in usecases (bridging suspend to non-suspend)"
-  fi
-fi
-
-# Check for Result<T> wrapper in suspend functions (Dart pattern, not Kotlin)
-if grep -q "Result<" "$file_path" && grep -q "suspend fun" "$file_path"; then
-  errors="$errors\nDO NOT wrap suspend functions in Result<T> — let exceptions bubble up naturally"
-fi
-
-# Check for CompletableFuture/Future in Kotlin code (should use suspend fun)
-if grep -qE "CompletableFuture|Future<.*>" "$file_path" && [[ ! "$file_path" =~ test ]]; then
-  errors="$errors\nUse suspend fun instead of Future/CompletableFuture in Kotlin"
-fi
-
-# ===== WARNING CHECKS (inform) =====
-
-# Check for var (prefer val)
-var_count=$(grep -c "var " "$file_path" || echo "0")
-if [ "$var_count" -gt 3 ]; then
-  warnings="$warnings\n  - Many mutable variables (${var_count}) - prefer val where possible"
-fi
-
-# Check for callback style (function with lambda parameter, not suspend)
-if grep -qE "fun [a-zA-Z]+\(.*: \(.*\) -> " "$file_path" && [[ ! "$file_path" =~ test ]]; then
-  warnings="$warnings\n  - Callback-style function detected - consider using suspend fun instead"
-fi
-
-# Check for String concatenation in URLs
-if grep -qE '\$\{.*\}.*http|"http.*\$' "$file_path"; then
-  warnings="$warnings\n  - URL string concatenation - consider using path parameters or constants"
-fi
-
-# Check for magic numbers (no explanation for version numbers, timeouts, etc.)
-if grep -qE "= [0-9]{4,}" "$file_path" && [[ ! "$file_path" =~ test ]]; then
-  warnings="$warnings\n  - Magic number detected - extract to named constant (e.g., const val TIMEOUT_MS)"
-fi
-
-# Check for single-letter variable names (except in loops)
-single_letter=$(grep -oE '\b[a-z]\s*=' "$file_path" | grep -v "i =" | grep -v "j =" | wc -l || echo "0")
-if [ "$single_letter" -gt 0 ]; then
-  warnings="$warnings\n  - Single-letter variables found - use descriptive names (e.g., movieId not m)"
-fi
-
-# ===== OUTPUT =====
+while IFS= read -r rel; do
+  case $rel in
+    src/main/kotlin/*) ;;
+    *) continue ;;  # tests may block (runBlocking { } test bodies are idiomatic)
+  esac
+  layer=${rel#src/main/kotlin/org/mobyle/}
+  routing=0; koin_banned=0
+  case $layer in
+    routing/*) routing=1 ;;
+    data/di/*) ;;
+    domain/*|data/*) koin_banned=1 ;;
+  esac
+  hits=$(scan_kotlin "$BACKEND/$rel" "$routing" "$koin_banned")
+  while IFS= read -r hit; do
+    [ -z "$hit" ] && continue
+    errors="$errors
+  - backend/$rel:$(printf '%s' "$hit" | cut -f1): $(printf '%s' "$hit" | cut -f2-)"
+  done <<< "$hits"
+done <<< "$CHANGED"
 
 if [ -n "$errors" ]; then
-  echo -e "❌ Kotlin Code Issues:$errors" >&2
-  exit 1
+  printf 'Kotlin coroutine/DI problems in the files you changed:%s\n\nFix them, then finish. Conventions: rules/backend/backend-implementation.md\n' "$errors" >&2
+  exit 2
 fi
-
-if [ -n "$warnings" ]; then
-  echo -e "⚠️  Kotlin Code Suggestions:$warnings" >&2
-fi
-
 exit 0

@@ -3,48 +3,20 @@
 # Blocks `gh pr create` and `git push` in the meta-repo when the branch moves a
 # submodule ref or edits the feature map and the map no longer matches the code.
 # Enforces rules/common/FEATURE_MAP.md.
-# Register as PreToolUse hook on the Bash tool in .claude/settings.json.
+# Registered as a PreToolUse hook on the Bash tool in .claude/settings.json.
+# Tests: .claude/skills/muuvie-feature-map/test/hook.test.mjs.
 
-input=$(cat)
-command=$(echo "$input" | jq -r '.tool_input.command // empty')
-# The session's working directory, which is where the command will run.
-cwd=$(echo "$input" | jq -r '.cwd // empty')
-[ -d "$cwd" ] || cwd=$PWD
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+[ -z "$HOOK_COMMAND" ] && exit 0
 
-if [ -z "$command" ]; then
+# A real `git push` / `gh pr create`, not a mention in a message, quote or heredoc.
+text=$(executable_text "$HOOK_COMMAND")
+if ! runs_git "$text" push && ! command_segments "$text" | grep -qE '^gh[[:space:]]+pr[[:space:]]+create([[:space:]]|$)'; then
   exit 0
 fi
 
-# Heredoc bodies are data, not commands: drop them before matching, so a script
-# that merely mentions "git push" doesn't trigger the check. A here-string (<<<)
-# is not a heredoc.
-command=$(printf '%s\n' "$command" | awk '
-  in_doc {
-    line = $0
-    sub(/^\t+/, "", line)
-    if (line == tag) in_doc = 0
-    next
-  }
-  {
-    print
-    if (match($0, /(^|[^<])<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
-      tag = substr($0, RSTART, RLENGTH)
-      sub(/^[^<]*<<-?[ \t]*/, "", tag)
-      gsub(/["\047]/, "", tag)
-      in_doc = 1
-    }
-  }')
-
-# Same matching as check-docs-sync.sh: a real `gh pr create` / `git push`, at the
-# start of a pipeline, after a chain operator, or after env-var prefixes.
-PR_PATTERN='(^|[;&|][[:space:]]*)([A-Z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*gh[[:space:]]+pr[[:space:]]+create'
-PUSH_PATTERN='(^|[;&|][[:space:]]*)([A-Z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*git[[:space:]]+push'
-
-if ! echo "$command" | grep -qE "$PR_PATTERN" && ! echo "$command" | grep -qE "$PUSH_PATTERN"; then
-  exit 0
-fi
-
-repo_root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
+repo_root=$(git -C "$HOOK_CWD" rev-parse --show-toplevel 2>/dev/null) || exit 0
 cli="$repo_root/.claude/skills/muuvie-feature-map/bin/feature-map-check"
 
 # Only the meta-repo has the map; a session whose cwd is a submodule skips.
@@ -52,15 +24,8 @@ if [ ! -f "$cli" ] || ! command -v node >/dev/null 2>&1; then
   exit 0
 fi
 
-# A push or PR from inside another repo (a submodule, by any path) is that repo's
-# business, not the map's: resolve every `cd` / `git -C` target with git.
-targets=$(echo "$command" | grep -oE "(cd|git[[:space:]]+-C)[[:space:]]+(\"[^\"]*\"|'[^']*'|[^[:space:];&|]+)" |
-  sed -E "s/^(cd|git[[:space:]]+-C)[[:space:]]+//; s/^[\"']//; s/[\"']$//")
-while IFS= read -r target; do
-  [ -z "$target" ] && continue
-  top=$(git -C "$cwd" -C "$target" rev-parse --show-toplevel 2>/dev/null) || continue
-  [ "$top" != "$repo_root" ] && exit 0
-done <<< "$targets"
+# A push or PR from inside another repo (a submodule, by any path) is that repo's business.
+targets_other_repo "$HOOK_COMMAND" "$HOOK_CWD" "$repo_root" && exit 0
 
 base=""
 for candidate in origin/dev origin/main; do

@@ -27,7 +27,7 @@ After bootstrap, set `LINEAR_ACCESS_TOKEN` in `.claude/settings.local.json` (git
 - **[.claude/skills/](.claude/skills)** — Project-level Claude Code skills (auto-discovered)
 - **[.claude/hooks/](.claude/hooks)** — Pre/Post/Session hooks that enforce rules
 - **[.claude/CLAUDE.md](.claude/CLAUDE.md)** — Claude/tooling-specific behavior (companion to root `CLAUDE.md`)
-- **[agents/](agents)** — Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `reviewer`)
+- **[.claude/agents/](.claude/agents)** — Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `reviewer`)
 - **[.claude/commands/](.claude/commands)** — Slash commands (`/new-usecase`, `/new-datasource`, `/new-repository`, `/new-ui-module`, `/review-pr`, `/ultimate-feature`)
 - **[patches/](patches)** — npm patches applied by `patch-package` on install (e.g. `linear-mcp+1.2.0.patch`)
 
@@ -69,7 +69,7 @@ Connect Linear to Claude Code for issue management in development sessions.
 
 ### Pipeline Agents
 
-Feature-development pipeline lives in [`agents/`](agents). Dispatched via the `Task` tool (Markdown files are auto-discovered — no registration in `settings.json`):
+Feature-development pipeline lives in [`.claude/agents/`](.claude/agents). Dispatched via the `Task` tool (Markdown files are auto-discovered — no registration in `settings.json`):
 
 | Agent | Role |
 |-------|------|
@@ -104,7 +104,7 @@ Scaffolding + review shortcuts in [`.claude/commands/`](.claude/commands):
 | `PreToolUse:Bash` | `check-docs-sync.sh` | `gh pr create` / `git push` when critical files change without a doc update |
 | `PostToolUse:Edit\|Write` | `format-code.sh` | (formatter) runs `dart format` on `.dart` files |
 
-Pipeline agents add per-agent hooks (`validate-spec.sh`, `validate-implementation.sh`, `validate-localization.sh`, `validate-module-structure.sh`, `verify-di-registration.sh`, `regenerate-generated-files.sh`, `pipeline-coordinator.sh`, `human-gate-review.sh`, `enforce-path-restrictions.sh`, `block-cross-feature-data-imports.sh`) in their frontmatter. All hooks live in `.claude/hooks/`.
+Pipeline agents declare per-agent hooks in their frontmatter: `implementer-tester` (path allowlist, cross-feature import guard, `validate-implementation.sh`, localization and module-structure checks), `backend-implementer` (path allowlist, structure, Kotlin and Koin checks), `pm-spec` (`validate-spec.sh`) and `architect-review` (`human-gate-review.sh`). All hooks live in `.claude/hooks/`; see its README, and run `npm run test:hooks` to test them.
 
 ## Frontend (Muuvie)
 

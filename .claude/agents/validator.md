@@ -35,7 +35,7 @@ You may be validating code from:
 - [ ] Do APIs match the spec contract?
 
 ### 2. Architecture Compliance (muuvie/)
-- [ ] Feature modules respect domain/data/feature layer structure (see `rules/feature-architecture.md`)
+- [ ] Feature modules respect domain/data/feature layer structure (see `rules/frontend/feature-architecture.md`)
 - [ ] Dependency direction correct: feature → data → domain
 - [ ] No cross-feature imports of `data/` packages
 - [ ] DI registration complete in `lib/di/injection.config.dart`
@@ -49,7 +49,7 @@ You may be validating code from:
 - [ ] Error responses match frontend expectations
 
 ### 4. UI Pattern Compliance (muuvie/)
-- [ ] UI modules have exactly 3 files: `*_state.dart`, `*_bloc.dart`, `*_screen.dart` (see `rules/ui-architecture.md`)
+- [ ] UI modules have exactly 4 files plus the barrel: `*_state.dart`, `*_bloc.dart`, `*_page.dart`, `*_screen.dart` (see `rules/frontend/ui-architecture.md`)
 - [ ] States use sealed classes with `Loading`/`Success`/`Error`
 - [ ] Bloc extends `Cubit`
 - [ ] Screen uses `@RoutePage()` annotation and `BlocBuilder`
@@ -63,7 +63,7 @@ You may be validating code from:
 - [ ] One class per file, snake_case filenames, PascalCase class names
 
 ### 6. Testing (muuvie/)
-- [ ] Test structure mirrors `lib/` under `test/` (see `rules/feature-testing.md`)
+- [ ] Test structure mirrors `lib/` under `test/` (see `rules/frontend/feature-testing.md`)
 - [ ] Every public use case has ≥ 1 unit test
 - [ ] Repositories/data sources are mocked, not real network/storage
 - [ ] Test files follow `*_test.dart` naming
@@ -181,13 +181,13 @@ The `reviewer` agent already implements the full pipeline (parallel sub-reviewer
 
 **Invariant:** `validator` MUST only dispatch the `reviewer` subagent in PR mode. The `Task` tool is present solely for this delegation. Do not call `Task` with any other `subagent_type` from `validator`. Violating this rule reintroduces the duplication this design avoids and bypasses the read-only stance of `validator`.
 
-**Mirror invariant on the other side:** `reviewer` MUST NOT dispatch back to `validator`. This avoids a dispatch cycle. See `agents/reviewer.md`.
+**Mirror invariant on the other side:** `reviewer` MUST NOT dispatch back to `validator`. This avoids a dispatch cycle. See `.claude/agents/reviewer.md`.
 
 ```
 Task({
   subagent_type: "reviewer",
   description: "Inline-comment PR #<N>",
-  prompt: "Review PR #<N> on mobyleOfficial/MuuvieAi following the workflow in agents/reviewer.md. Run the three sub-reviewers in parallel, validate findings (≥0.6 confidence cutoff), deduplicate against any existing comments, and post net-new findings as inline review comments. Re-review aware: mark resolved threads. Return the STRICT JSON summary."
+  prompt: "Review PR #<N> on mobyleOfficial/MuuvieAi following the workflow in .claude/agents/reviewer.md. Run the three sub-reviewers in parallel, validate findings (≥0.6 confidence cutoff), deduplicate against any existing comments, and post net-new findings as inline review comments. Re-review aware: mark resolved threads. Return the STRICT JSON summary."
 })
 ```
 

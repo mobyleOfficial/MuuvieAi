@@ -143,6 +143,8 @@ When a document is produced by the feature-development pipeline (pm-spec → arc
 | `research/reviews/<feature>.md` | `architect-review` agent | Architecture review verdict |
 | `research/reviews/<feature>-code-review.md` | `validator` agent | Post-implementation code review |
 | `research/archive/<feature>.md` | manual | Completed / shelved features |
+| `research/features/<slug>/spec.md`, `plan.md` | `ultimate-developer` (and hand-run projects like `feature-map`) | One folder per feature: design spec and implementation plan |
+| `research/features/<slug>/research/<topic>.md` | `researcher` agent | One file per researched topic, linked from the plan's `## Research References` |
 
 Filename inside the subdirectory is based on the feature slug (e.g. `<feature>.md` for specs, `<feature>-code-review.md` for code reviews — no date prefix; pipeline stages map to a single feature, so directory + slug already disambiguate). The metadata YAML block at the top still carries the `date` field.
 
@@ -167,10 +169,11 @@ Use the flat `research/YYYY-MM-DD-topic.md` layout for any research that is not 
 | Wrong filename | Use `research/YYYY-MM-DD-topic.md` for ad-hoc, or `research/<subdir>/<feature>.md` for pipeline outputs |
 | No metadata | Add YAML block at top |
 | Buried recommendation | Put in Executive Summary or Verdict |
+| Citing a Linear issue (`MOO-123`, a linear.app URL) as a source | The workspace is on Linear's free tier and issues get deleted, so the link rots. Inline the context it held, or cite code (`path:line`), PRs or commits instead |
 
 ## Quick Checklist
 
-- [ ] Filename: `research/YYYY-MM-DD-[topic].md` (ad-hoc) **or** `research/<subdir>/<feature>.md` (pipeline output)
+- [ ] Filename: `research/YYYY-MM-DD-[topic].md` (ad-hoc), `research/<subdir>/<feature>.md` (pipeline output) **or** `research/features/<slug>/` (per-feature folder)
 - [ ] Metadata block with date, author, status
 - [ ] Executive summary (< 2 paragraphs)
 - [ ] All factual claims have sources

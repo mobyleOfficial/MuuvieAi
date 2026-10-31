@@ -34,7 +34,7 @@ task/frontend/
        (Uses /new-* Flutter/Dart skills)
        └─> Datasource → Repository → Usecase → UI Module
 
-5. Code Review (/code-reviewer)
+5. Code Review (/review-pr <PR#>)
    └─> research/reviews/{feature}-code-review.md
        (Quality review, patterns, DI registration)
 
@@ -76,7 +76,7 @@ cp task/frontend/template.md task/frontend/requests/comments-screen.md
 
 ### 5. Run Code Review
 ```bash
-/code-reviewer
+/review-pr <PR#>
 # Reads: Generated Flutter code
 # Writes: research/reviews/comments-screen-code-review.md
 # Checks: Patterns, DI, tests, code quality

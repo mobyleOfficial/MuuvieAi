@@ -5,15 +5,16 @@
 # Reads the active stage from .claude/task/pipeline-queue.json so paths stay
 # in sync with the queue (no hard-coded .tasks/ paths).
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+stop_hook_active && exit 0
 
-input=$(cat)
-queue_file=".claude/task/pipeline-queue.json"
+root=$(meta_root "$HOOK_CWD") || exit 0
+queue_file="$root/.claude/task/pipeline-queue.json"
 
-if [ ! -f "$queue_file" ]; then
-  echo "Blocked: pipeline queue not found at $queue_file" >&2
-  exit 2
-fi
+# No queue: architect-review ran outside the manual pipeline (for example
+# dispatched by ultimate-developer). Nothing to gate.
+[ -f "$queue_file" ] || exit 0
 
 # Pull the review file path and the spec path it gated from the queue
 review_file=$(jq -r 'first(.stages[] | select(.name == "review" and .status == "in-progress") | .output) // empty' "$queue_file")
@@ -24,12 +25,17 @@ if [ -z "$review_file" ]; then
   exit 0
 fi
 
+case "$review_file" in /*) ;; *) review_file="$root/$review_file" ;; esac
+
 if [ ! -f "$review_file" ]; then
   echo "Blocked: architect-review did not produce $review_file" >&2
   exit 2
 fi
 
-decision=$(grep -E "^Decision:[[:space:]]+(APPROVED|REJECTED)" "$review_file" | awk '{print $2}' | head -n 1)
+# The first "Decision" line, in the form architect-review writes
+# ("- **Decision:** APPROVED_WITH_CONDITIONS") or the plain "Decision: APPROVED".
+decision=$(grep -iE '^[[:space:]]*(-[[:space:]]*)?(\*\*)?Decision' "$review_file" | head -n 1 |
+  grep -oE 'APPROVED_WITH_CONDITIONS|APPROVED|REJECTED' | head -n 1)
 
 if [ "$decision" = "REJECTED" ]; then
   echo "Blocked: architect rejected the design" >&2
@@ -37,8 +43,12 @@ if [ "$decision" = "REJECTED" ]; then
   exit 2
 fi
 
-if [ "$decision" = "APPROVED" ]; then
-  echo "Architect approved the design."
+if [ "$decision" = "APPROVED" ] || [ "$decision" = "APPROVED_WITH_CONDITIONS" ]; then
+  if [ "$decision" = "APPROVED_WITH_CONDITIONS" ]; then
+    echo "Architect approved the design, with conditions — read them in the review before implementing."
+  else
+    echo "Architect approved the design."
+  fi
   echo ""
   echo "------------------------------------------------------------"
   echo "HUMAN GATE: review the approval before implementation starts"
@@ -54,5 +64,5 @@ if [ "$decision" = "APPROVED" ]; then
 fi
 
 echo "Blocked: review decision is missing or unrecognized" >&2
-echo "Expected a line like 'Decision: APPROVED' or 'Decision: REJECTED' in $review_file." >&2
+echo "Expected a line like '- **Decision:** APPROVED' (or APPROVED_WITH_CONDITIONS / REJECTED) in $review_file." >&2
 exit 2

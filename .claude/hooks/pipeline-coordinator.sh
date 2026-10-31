@@ -1,59 +1,52 @@
 #!/bin/bash
 # .claude/hooks/pipeline-coordinator.sh
-# Coordinates pipeline progression via queue file
-# Run as a Stop hook inside each pipeline agent's frontmatter.
-# Since it runs per-agent, we read the current in-progress stage from the queue.
+# Advances the manual pipeline queue (.claude/task/pipeline-queue.json) when a
+# pipeline agent finishes its stage, and names the next agent to run.
+# Run by hand once a stage is accepted, with the agent whose stage it was:
+#   echo '{}' | .claude/hooks/pipeline-coordinator.sh pm-spec
+# Deliberately NOT wired as a frontmatter Stop hook: Claude Code runs an
+# event's hooks in parallel, so it could advance a stage that a gate in the
+# same event (validate-spec, human-gate-review) is blocking.
+#
+# Only the in-progress stage owned by that agent is completed, so a pipeline
+# agent invoked for something else (e.g. architect-review dispatched by
+# ultimate-developer) never advances someone else's stage. No queue, no stage
+# for this agent → nothing to do. Tests: .claude/tests/pipeline-hooks.test.mjs.
 
-set -e
+. "$(dirname "$0")/lib-hook.sh"
+hook_read_input
+agent=${1:-}
+[ -z "$agent" ] && exit 0
 
-input=$(cat)
-queue_file=".claude/task/pipeline-queue.json"
+root=$(meta_root "$HOOK_CWD") || exit 0
+queue_file="$root/.claude/task/pipeline-queue.json"
+[ -f "$queue_file" ] || exit 0
 
-if [ ! -f "$queue_file" ]; then
-  # No active pipeline
-  exit 0
-fi
+stage=$(jq -r --arg agent "$agent" 'first(.stages[] | select(.status == "in-progress" and .agent == $agent) | .name) // empty' "$queue_file")
+[ -z "$stage" ] && exit 0
 
-current_agent=$(jq -r 'first(.stages[] | select(.status == "in-progress") | .agent) // empty' "$queue_file")
+tmp="$queue_file.tmp.$$"
+jq --arg stage "$stage" --arg agent "$agent" '
+  (.stages[] | select(.name == $stage) | .status) = "completed" |
+  .history += [{ "stage": $stage, "agent": $agent, "completed_at": (now | todate) }]
+' "$queue_file" > "$tmp" && mv "$tmp" "$queue_file" || { rm -f "$tmp"; exit 0; }
+echo "Pipeline stage completed: $stage ($agent)"
 
-if [ -z "$current_agent" ]; then
-  # Nothing is in-progress — the agent ran outside the pipeline
-  exit 0
-fi
-
-echo "Pipeline stage completed: $current_agent"
-
-# Update current stage to completed
-jq --arg agent "$current_agent" '
-  (.stages[] | select(.agent == $agent) | .status) = "completed" |
-  .history += [{
-    "stage": $agent,
-    "completed_at": (now | todate)
-  }]
-' "$queue_file" > "$queue_file.tmp" && mv "$queue_file.tmp" "$queue_file"
-
-# Find next stage
-next_stage=$(jq -r '.stages[] | select(.status == "pending") | .name' "$queue_file" | head -n 1)
-
+next_stage=$(jq -r 'first(.stages[] | select(.status == "pending") | .name) // empty' "$queue_file")
 if [ -z "$next_stage" ]; then
+  jq '.current_stage = "complete"' "$queue_file" > "$tmp" && mv "$tmp" "$queue_file"
   echo "✓ Pipeline complete!"
-  jq '.current_stage = "complete"' "$queue_file" > "$queue_file.tmp" && mv "$queue_file.tmp" "$queue_file"
   exit 0
 fi
 
-# Mark next stage as in-progress
 jq --arg stage "$next_stage" '
   (.stages[] | select(.name == $stage) | .status) = "in-progress" |
   .current_stage = $stage
-' "$queue_file" > "$queue_file.tmp" && mv "$queue_file.tmp" "$queue_file"
+' "$queue_file" > "$tmp" && mv "$tmp" "$queue_file"
 
-next_agent=$(jq -r --arg stage "$next_stage" '.stages[] | select(.name == $stage) | .agent' "$queue_file")
-next_input=$(jq -r --arg stage "$next_stage" '.stages[] | select(.name == $stage) | .input' "$queue_file")
-
+next_agent=$(jq -r --arg stage "$next_stage" 'first(.stages[] | select(.name == $stage) | .agent)' "$queue_file")
+next_input=$(jq -r --arg stage "$next_stage" 'first(.stages[] | select(.name == $stage) | .input) // "the previous stage output"' "$queue_file")
 echo ""
 echo "▶ Next stage: $next_stage"
-echo "▶ Agent: $next_agent"
 echo "▶ Use the $next_agent subagent to read $next_input and proceed"
-echo ""
-
 exit 0

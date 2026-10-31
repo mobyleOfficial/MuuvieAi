@@ -31,7 +31,7 @@
 |---------|-----|
 | Bumping a ref and fixing the map "later" | Same PR. The hook blocks the push anyway. |
 | Silencing an uncovered endpoint by adding it to *Not mapped* | Only for endpoints no user reaches. Give the reason. |
-| Writing a page from file names | Every rule and label on a page is read in code. See `agents/feature-mapper.md`. |
+| Writing a page from file names | Every rule and label on a page is read in code. See `.claude/agents/feature-mapper.md`. |
 | Leaving the `Mapped at` shas old after an update | `feature-map-check stale` then flags the page forever. |
 
 ---

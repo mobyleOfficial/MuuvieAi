@@ -43,6 +43,7 @@ One JSON object per run. `problems` fail the check, `warnings` (page too long, s
 
 **A page that no longer matches the app is a bug** (`rules/common/FEATURE_MAP.md`). The submodules can't carry the map (`rules/common/AI_AGNOSTIC_SUBMODULES.md`), so the meta-repo PR that moves a submodule ref updates the pages its changes touch, and `.claude/hooks/check-feature-map.sh` blocks a push or PR that leaves the check failing.
 
+- The hook runs *before* the command, so it judges the repo as it is then. Commit a submodule ref bump in one command and push in the next: `git add muuvie && git commit … && git push` as a single command is blocked, because the bump isn't committed yet when the hook looks (`submodule-mismatch`).
 - New endpoint or route: `$B uncovered` names it; add it to the page that owns it.
 - Changed behaviour: update the page, and its `Mapped at` shas.
 - Periodically: `/map-features --audit` re-reads the code behind pages that `stale` flags.

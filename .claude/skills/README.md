@@ -23,7 +23,7 @@ The `Skill("<name>")` tool form is reserved for programmatic invocation from wit
 
 ## Scaffolding Workflows
 
-Flutter scaffolding (new datasource, repository, usecase, UI module) lives under [`.claude/commands/`](../commands/) and is invoked via slash commands (`/new-datasource`, `/new-repository`, `/new-usecase`, `/new-ui-module`) — not as skills. See [`agents/implementer-tester.md`](../../agents/implementer-tester.md) for pipeline usage.
+Flutter scaffolding (new datasource, repository, usecase, UI module) lives under [`.claude/commands/`](../commands/) and is invoked via slash commands (`/new-datasource`, `/new-repository`, `/new-usecase`, `/new-ui-module`) — not as skills. See [`.claude/agents/implementer-tester.md`](../agents/implementer-tester.md) for pipeline usage.
 
 ## Adding a New Skill
 

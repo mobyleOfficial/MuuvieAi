@@ -65,7 +65,13 @@ No edit to `.mcp.json` needed on a clone. Token lives only in `.claude/settings.
 
 **3. Set `LINEAR_ACCESS_TOKEN` in `.claude/settings.local.json`**
 
-Add (or merge) the token under the `env` block. Create the file if it does not exist:
+Start from the shipped template if the file does not exist yet:
+
+```bash
+cp .claude/settings.local.template.json .claude/settings.local.json
+```
+
+Then put the token under the `env` block (merge it in if the file already has other settings):
 
 ```json
 {
@@ -116,6 +122,22 @@ This repo defaults to the `MOO` project in the `mobyle` workspace. The `linear-m
 | Edited token but MCP still returns "Authentication required" | The MCP server process started before the token was set — restart Claude Code completely (not just a new tab) so the wrapper re-reads `settings.local.json` |
 | `.mcp.json` reverted to inline `${LINEAR_ACCESS_TOKEN}` | The literal string is passed through to the child unexpanded → silent auth failure. Restore `"command": "./.claude/bin/linear-mcp.sh"` and drop the `env` block |
 | `It looks like you're trying to use an API key as a Bearer token` | `patches/linear-mcp+1.2.0.patch` was not applied. Run `npm run postinstall` (or `npx patch-package`) to re-apply, then restart Claude Code |
+
+## Limits of the MCP server (use the GraphQL API instead)
+
+`linear-mcp` covers reading issues and creating or updating plain ones. It can't do several ordinary things that the Linear API itself supports:
+
+- **Milestones:** it can filter by `projectMilestones` but not create them, and `linear_create_issue(s)` take no `projectMilestoneId`.
+- **Project assignment:** `linear_create_issue` takes `teamId` but no `projectId`; `linear_bulk_update_issues` only sets `assigneeId`, `priority` and `stateId`. There is no generic issue-update tool.
+- **Bulk create:** `linear_create_issues` fails with `Variable "$input" of type "[IssueCreateInput!]!" used in position expecting type "IssueCreateInput!"` (it sends a list to a single-issue mutation). Create issues one at a time, or use the API.
+
+For those, call `https://api.linear.app/graphql` directly (`projectMilestoneCreate`, `issueUpdate(id, input: { projectId, projectMilestoneId })`):
+
+- Send the token from `.claude/settings.local.json` **bare** in the `Authorization` header — no `Bearer` prefix (the same rejection the patch above works around).
+- Use `curl --data-binary @payload.json`. Build the JSON payload in a file (with a script if needed), never by interpolating GraphQL into a shell string: nested quoting mangles it into 400s. Batch many mutations into one request with aliases (`u0:`, `u1:`, …) and variables.
+- Prefer `curl` over Python's `urllib` on machines whose Python build has no CA bundle (`CERTIFICATE_VERIFY_FAILED`).
+- Verify with a follow-up query. A mutation's own `success: true` is not proof the board looks right.
+
 
 ## Security Notes
 
