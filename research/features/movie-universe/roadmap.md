@@ -198,6 +198,19 @@ Tamanhos: **P** ≈ até 1 semana, **M** ≈ 1 a 2 semanas, **G** ≈ 3 semanas 
 - Filtros que viram "constelações": gênero, década, só os não assistidos.
 - Mostrar no card *por que* o filme está ali ("3 temas em comum: viagem no tempo, …").
 
+**Status (2026-11-09):** ✅ implementado (commits nos branches `feature/movie-universe` do `backend/` e do `muuvie/`, sem PR). Validado no moto g9 plus com dados mockados.
+- **Backend:** cada item de `affinities` ganhou `genres`, todos os gêneros do próprio similar (vazio enquanto ele não foi enriquecido). É o que permite filtrar por gênero sem outra chamada.
+- **Selos:** o `me` que já vinha no endpoint vira um selo na borda do planeta: um ✓ verde para "Já assisti" e um marcador âmbar para "Quero ver" (`StatusBadge`). O símbolo carrega o significado e a cor só repete. O selo tem no mínimo 7 px de raio na tela, em qualquer zoom.
+- **Card:** mostra o status em texto, "Em comum: …" (até 4 gêneros e keywords compartilhados) e as ações "Quero ver" (`AddMovieToWatchlist`, que já existia para Notícias) e "Adicionar à estante" (`AddToShelvesRoute`). As duas pedem login antes (`AuthGate`). "Quero ver" muda o planeta na hora e volta se a chamada falhar.
+- **Filtros ("constelações"):** botão "Filtrar planetas" na barra, com "Só os que não assisti", uma década e um gênero. Só aparecem décadas e gêneros que existem no universo. No mapa, os planetas que não combinam ficam esmaecidos, sem selo e sem toque, mas não saem do lugar. Na lista, eles somem. Uma barra mostra "N de M planetas combinam" com "Limpar filtros". O filtro sobrevive a um recarregamento.
+- **Lista:** cada planeta mostra ano, status e "Em comum", e ganha um menu "Mais ações para {título}" com as mesmas ações do card.
+- **Mudanças em relação ao plano:** os planetas que não combinam esmaecem em vez de serem ligados por linhas de constelação. Um filme só combina com um filtro de década ou gênero quando o ano ou os gêneros são conhecidos.
+- **Testes:** cubit (+4: "Quero ver" otimista e revertido, filtro mantido no recarregamento, card fechado quando o planeta sai do filtro), `UniverseFilter` e grafo (6) e datasource (gêneros).
+- **No aparelho:** 60 fps com o filtro ativo (raster de ~6,5 ms). Com o sheet de filtros aberto sobre o mapa, o raster sobe para 11–15 ms e volta ao fechar.
+- **Fica em aberto:**
+  - Depois de "Adicionar à estante" ou de um login feito pelo `AuthGate`, os selos dos outros planetas só se atualizam ao reabrir o universo, porque o app não sabe em quais estantes do sistema o filme entrou.
+  - Testar com TalkBack o sheet de filtros e o menu da lista.
+
 ### Fase 5 — Social e gamificação (M)
 - Compartilhar a rota percorrida ("da origem *A* até *B* em 7 saltos").
 - Conquistas de explorador ligadas à [gamification](../../../.claude/skills/muuvie-feature-map/features/gamification.md) (por exemplo, visitar 50 sistemas).
@@ -263,4 +276,6 @@ Implementado no branch `feature/movie-universe` do `backend/` (commitado, ainda 
 - [ ] Commitar e abrir os PRs do `backend` e do `muuvie` para `dev`. Depois, atualizar as refs dos submódulos e a página `movie-detail` do feature map (`/map-features`).
 - [x] Fase 3: score de similaridade no endpoint e universo em chunks (commits, sem PR).
 - [ ] Fase 3: cache negativo de similares no backend.
-- [ ] Fase 4: personalização (o card já tem `sharedGenres` e `sharedKeywords` para o "por que está aqui").
+- [x] Fase 4: personalização (selos, "Quero ver", estantes, filtros e "Em comum"; commits, sem PR).
+- [ ] Fase 4: atualizar os selos depois de "Adicionar à estante" e do login.
+- [ ] Fase 5: social e gamificação.
