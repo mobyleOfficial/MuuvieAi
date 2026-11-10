@@ -63,9 +63,23 @@ Analysis: a vazão ficou em 60 fps durante toda a exploração e não houve tela
 1. **Pôsteres presos no `ImageCache` do Flutter.** O `PosterImageLoader` passava pelo cache global, que guardava cada pôster decodificado (até 100 MB) mesmo depois de o mapa soltar. Agora o pôster sai desse cache assim que o `PosterCache` recebe o clone.
 2. **Malha das rotas refeita a cada 0,2 s.** O streaming chamava `showRoutesOf` em todo ciclo. Agora rotas, áreas e planetas só são recalculados quando o grafo muda.
 
-Uma instrumentação temporária mostrou o streaming funcionando: de 47 sistemas, ficaram carregados entre 2 e 11 (quase sempre 5 ou 6), e o cache de pôsteres parou em 80. O build médio acompanha esse número. A memória que ainda cresce vem do grafo, que guarda todos os sistemas por desenho, e dos caches limitados enchendo. Ela não chegou a estabilizar em 6 minutos, então o critério de "memória estável" está **quase** atendido: vale repetir com 15 minutos antes de fechar a fase.
+Uma instrumentação temporária mostrou o streaming funcionando: de 47 sistemas, ficaram carregados entre 2 e 11 (quase sempre 5 ou 6), e o cache de pôsteres parou em 80. O build médio acompanha esse número. A memória que ainda cresce vem do grafo, que guarda todos os sistemas por desenho, e dos caches limitados enchendo. Ela não chegou a estabilizar em 6 minutos, então o critério de "memória estável" está **quase** atendido: a rodada de 15 minutos abaixo confirmou que ela estabiliza.
 
 Os quadros com `totalSpan` acima de 16,7 ms ficaram em ~29%, contra ~23% na 1ª rodada, concentrados nas janelas em que a câmera desliza até um sistema novo. Como na Fase 0, isso é latência de pipeline e não perda de quadros.
+
+### Exploração de 15 minutos (depois das Fases 4 e 5)
+
+Mesma entrada, com autopiloto e órbitas animadas: 15 minutos e 229 saltos, com selos de status e o registro de visitas ligados (2026-11-10).
+
+| Medida | Resultado |
+|---|---|
+| Vazão | 298–300 quadros a cada 5 s em toda a rodada |
+| Build médio | 5,5–7,1 ms por bloco de 3 minutos |
+| Raster médio | 7,8–9,0 ms (picos de 33–38 ms só nos 6 primeiros minutos) |
+| Quadros com `totalSpan` > 16,7 ms | 35–57% por bloco de 3 minutos |
+| PSS | 178 MB → 243 MB aos 6 minutos, depois estável entre 224 e 237 MB até os 15 |
+
+Analysis: a memória **estabiliza**, então o critério de "memória estável" da Fase 3 está atendido. A vazão continua em 60 fps. A fatia de quadros com `totalSpan` acima de 16,7 ms subiu de ~29% para 35–57%. Como na Fase 3, é latência de pipeline (build e raster em sequência) e não perda de quadros, mas é o próximo ponto a olhar se o universo crescer em componentes por planeta.
 
 ## Recommended Approach
 
@@ -78,5 +92,5 @@ Os quadros com `totalSpan` acima de 16,7 ms ficaram em ~29%, contra ~23% na 1ª 
 - [x] Medir 10 e 60 planetas no moto g9 plus.
 - [x] Repetir a medição no fim da Fase 2: com 3 sistemas abertos e arrastando, ~300 quadros a cada 5 s, raster médio de 4,0 a 4,2 ms, 0 a 3 quadros acima de 16 ms e 203 MB de PSS. O spike também pegou um defeito: o enquadramento inicial não era aplicado no `onLoad` do jogo (corrigido).
 - [x] Exploração longa da Fase 3 (6 minutos, ~92 saltos).
-- [ ] Repetir a exploração longa por 15 minutos para confirmar que a memória estabiliza.
-- [ ] Testar com TalkBack ligado no aparelho (o modo lista abre sozinho).
+- [x] Repetir a exploração longa por 15 minutos: a memória estabiliza entre 224 e 237 MB.
+- [x] Testar com TalkBack ligado no aparelho. Achou e corrigiu um defeito: a lista não abria sozinha, porque o Android avisa o leitor de tela com atraso.

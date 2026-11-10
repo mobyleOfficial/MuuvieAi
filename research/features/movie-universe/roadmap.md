@@ -189,7 +189,9 @@ Tamanhos: **P** ≈ até 1 semana, **M** ≈ 1 a 2 semanas, **G** ≈ 3 semanas 
   - Os sistemas entram e saem por distância da câmera, com histerese, e não por chunk. A grade de chunks é usada para a decoração.
   - A cor e o tamanho dos planetas continuam vindo do pôster e do rank, não da seed.
 - **Testes do app:** `ChunkGrid` (3), `SystemStreaming` (5), `PosterCache` (4), órbitas (7), grafo (+2, incluindo 30 saltos com scores baixos sem sobreposição), cubit (+4 de prefetch) e datasource (+1).
-- **Fica em aberto:** o cache negativo para filmes sem similares no TMDB (cada chamada ainda refaz a busca) e o enriquecimento sob demanda dos similares sem keywords.
+- **Itens fechados depois (2026-11-10):**
+  - **Cache negativo:** `movies.similars_checked_at` (migração V21) guarda quando o TMDB foi consultado, mesmo sem resultado. Um filme sem similares não é consultado de novo por 7 dias.
+  - **Enriquecimento antecipado:** os similares sem gêneros nem keywords passam na frente do loop de enriquecimento (`enrichAhead`, até 10 por chamada, com o mesmo espaçamento). A próxima visita já os pontua de verdade.
 
 ### Fase 4 — Personalização (M)
 **Objetivo:** o universo reflete o que o usuário já fez.
@@ -207,18 +209,36 @@ Tamanhos: **P** ≈ até 1 semana, **M** ≈ 1 a 2 semanas, **G** ≈ 3 semanas 
 - **Mudanças em relação ao plano:** os planetas que não combinam esmaecem em vez de serem ligados por linhas de constelação. Um filme só combina com um filtro de década ou gênero quando o ano ou os gêneros são conhecidos.
 - **Testes:** cubit (+4: "Quero ver" otimista e revertido, filtro mantido no recarregamento, card fechado quando o planeta sai do filtro), `UniverseFilter` e grafo (6) e datasource (gêneros).
 - **No aparelho:** 60 fps com o filtro ativo (raster de ~6,5 ms). Com o sheet de filtros aberto sobre o mapa, o raster sobe para 11–15 ms e volta ao fechar.
-- **Fica em aberto:**
-  - Depois de "Adicionar à estante" ou de um login feito pelo `AuthGate`, os selos dos outros planetas só se atualizam ao reabrir o universo, porque o app não sabe em quais estantes do sistema o filme entrou.
-  - Testar com TalkBack o sheet de filtros e o menu da lista.
+- **Itens fechados depois:**
+  - Depois de "Adicionar à estante", o estado do filme é buscado de novo (`GET /movies/{id}/me`). Um login feito pelo `AuthGate` busca de novo os similares de todos os sistemas, de 4 em 4, e aplica só os estados, sem mexer nas posições. Uma mudança feita durante esse refresh não é sobrescrita por ele.
+  - **TalkBack (moto g9 plus):** o Android só avisa que há leitor de tela um ou dois quadros depois de o app abrir, então a lista não abria sozinha. Esse defeito vinha da Fase 1. Agora a tela passa para a lista quando o aviso chega, a menos que o usuário já tenha escolhido a vista.
+    - Lida pelo `uiautomator`, a árvore de acessibilidade mostra cada planeta com ano, status e "Em comum", seguido de "Mais ações para…" e "Viajar até…".
+    - O sheet de filtros é modal, com switch marcável, chips com estado e títulos de seção.
+    - Testes de widget conferem alvo de toque, rótulos e contraste nos dois temas.
 
 ### Fase 5 — Social e gamificação (M)
 - Compartilhar a rota percorrida ("da origem *A* até *B* em 7 saltos").
 - Conquistas de explorador ligadas à [gamification](../../../.claude/skills/muuvie-feature-map/features/gamification.md) (por exemplo, visitar 50 sistemas).
 - Estantes públicas exibidas como constelações.
 
+**Status (2026-11-10):** ✅ implementado (commits nos branches `feature/movie-universe` do `backend/` e do `muuvie/`, sem PR). Conferido no moto g9 plus com dados mockados.
+- **Rota:** a barra de saltos ganhou "Compartilhar rota". Ela compartilha um texto como "Fui de *A* até *B* em N saltos no Universo de Filmes do Muuvie: A → … → B", montado por `UniverseGraph.routeTo`.
+- **Vaquinhas exploradoras:**
+  - **Backend:** `POST /users/me/universe/visits` recebe de 1 a 50 ids e guarda cada sistema uma vez por usuário (tabela `universe_visits`, migração V20). A regra nova `universe_systems` desbloqueia o **Foguete** (comum, 10 sistemas) e o **Astronauta** (raro, 50 sistemas), pelo mesmo `PetUnlocker` das outras vaquinhas.
+  - **App:** a origem e cada sistema novo são registrados. Visitar de novo não conta. Deslogado, a chamada falha e é ignorada. Depois de um login, todos os sistemas abertos são enviados. Um desbloqueio aparece uma vez num SnackBar com "Ver", que abre a Bombonière. A arte das duas vaquinhas segue o estilo das outras.
+- **Constelações:** o sheet de filtros lista as estantes públicas que têm a estrela em foco (`GET /movies/{id}/shelves/public`). Escolher uma lê até 10 páginas dos filmes dela (`GET /shelves/{id}/movies`) e vira um filtro: os planetas da estante acendem, os outros apagam, e uma linha liga os que acenderam, sistema por sistema (`ConstellationLines`, um único `drawRawPoints` por quadro). A barra mostra "*Estante*: N de M planetas". Escolher de novo desfaz.
+- **Testes:** backend (visitas contadas uma vez, desbloqueio aos 10, ids desconhecidos ignorados). App: cubit (+5: visitas, aviso único, rota, constelação, falha da constelação) e tela (seção de constelações).
+- **No aparelho:** 60 fps com a constelação ligada e arrastando (raster de ~7,5 ms).
+- **Mudança em relação ao plano:** as constelações saem de estantes públicas que têm a estrela em foco, e não de todas as estantes do usuário. Assim, qualquer pessoa vê constelações sem precisar ter estantes.
+
 ### Fase 6 — Exploratório (sem compromisso)
 - Similaridade semântica por embeddings de sinopse.
 - Reavaliar 3D real (Opção 3) se o `flutter_gpu` estiver estável.
+
+**Status (2026-11-10):** ✅ avaliada em [phase6-exploration.md](phase6-exploration.md).
+- **Embeddings:** recomenda um experimento de cerca de 1 semana. Um modelo local multilíngue de 384 dimensões em ONNX no backend, vetores no pgvector, e a sinopse como quarto sinal do `SimilarityScorer`. Só vira produto se ganhar um teste cego.
+- **3D:** fica no Flame. O `flutter_scene` roda no Flutter 3.47 estável, mas o Flutter GPU ainda é *preview* e precisa ser ligado por plataforma.
+- **Não houve protótipo** com sinopses reais, porque não havia `TMDB_API_KEY` no ambiente.
 
 ## Endpoint de similares
 
@@ -272,10 +292,14 @@ Implementado no branch `feature/movie-universe` do `backend/` (commitado, ainda 
 - [x] Fase 0 medida no moto g9 plus ([spike.md](spike.md)). O gate passou.
 - [x] Fase 1 validada no aparelho: mapa, toque, card e modo lista.
 - [x] Fase 2 implementada e validada no aparelho.
-- [ ] Testar com TalkBack ligado e o toque na estrela de outro sistema, à mão.
+- [x] Testar com TalkBack ligado (árvore de acessibilidade lida no aparelho).
+- [x] Tocar na estrela de outro sistema no aparelho: o foco vai para aquele sistema.
+- [x] Exploração de 15 minutos: memória estável ([spike.md](spike.md)).
 - [ ] Commitar e abrir os PRs do `backend` e do `muuvie` para `dev`. Depois, atualizar as refs dos submódulos e a página `movie-detail` do feature map (`/map-features`).
 - [x] Fase 3: score de similaridade no endpoint e universo em chunks (commits, sem PR).
-- [ ] Fase 3: cache negativo de similares no backend.
 - [x] Fase 4: personalização (selos, "Quero ver", estantes, filtros e "Em comum"; commits, sem PR).
-- [ ] Fase 4: atualizar os selos depois de "Adicionar à estante" e do login.
-- [ ] Fase 5: social e gamificação.
+- [x] Fase 4: atualizar os selos depois de "Adicionar à estante" e do login.
+- [x] Fase 5: rota compartilhada, vaquinhas exploradoras e constelações (commits, sem PR).
+- [x] Fase 3: cache negativo de similares e enriquecimento antecipado.
+- [x] Fase 6: avaliação de embeddings e 3D ([phase6-exploration.md](phase6-exploration.md)).
+- [ ] Fase 6: decidir sobre o experimento de embeddings (decision gate: Bruno).
