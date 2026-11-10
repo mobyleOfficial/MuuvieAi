@@ -1,6 +1,6 @@
 # Profile
 
-> Mapped at backend@8082860 muuvie@314a410 · source: code
+> Mapped at backend@4be7c0e muuvie@c5a3668 · source: code
 
 The signed-in user's own profile, the root of the Perfil tab: a header (banner, avatar, name, @handle, bio, links, counters), shortcuts, and six tabs. It also covers Editar perfil and the Destaques editor. The screen is `MemberProfileView` with `userId: 'me'`. [public-profile](public-profile.md) renders the same view for someone else, so the header and tabs below describe both. Two tabs are mapped elsewhere: Estantes in [shelves](shelves.md) and Locadoras in [locadoras](locadoras.md). Gráficos is in [stats](stats.md).
 
