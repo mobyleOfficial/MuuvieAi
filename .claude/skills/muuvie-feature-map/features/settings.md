@@ -1,12 +1,12 @@
 # Settings
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@010aa02 muuvie@05bd8fe · source: code
 
 Configurações: a full-screen modal from the own profile with shortcuts to edit the profile and import, the five push-notification switches, the device push-permission warning, the intro replay and logout. There is no delete-account or change-password action anywhere in the app. Lives in `muuvie/ui/profile/lib/settings`; backend side is the notification-prefs and device endpoints in `MessagesRouting.kt` plus `POST /auth/logout`.
 
 ## Sub-features
 - **loading:** spinner until prefs are read. If `GET /users/me/notification-prefs` fails, the whole Notificações section is hidden; the rest still works.
-- **conta:** section "Conta" (`l10n:settingsAccount`): "Editar perfil" (`l10n:profileEditProfile`) opens `EditProfileRoute` (see [profile](profile.md)); "Importar filmes" (`l10n:settingsImport`, hint "Do Filmow, sem sobrescrever o que você fez aqui", `l10n:settingsImportHint`) opens `ImportStartRoute` (see [imports](imports.md)). A saved profile edit makes the profile reload when Configurações closes.
+- **conta:** section "Conta" (`l10n:settingsAccount`): "Editar perfil" (`l10n:profileEditProfile`) opens `EditProfileRoute` (see [profile](profile.md)); "Importar filmes" (`l10n:settingsImport`, hint "Do Filmow ou do Letterboxd, sem sobrescrever o que você fez aqui", `l10n:settingsImportHint`) opens `ImportStartRoute` (see [imports](imports.md)). A saved profile edit makes the profile reload when Configurações closes.
 - **notifications:** section "Notificações" (`l10n:settingsNotifications`), five switches, all on by default:
   - "Sussurros" (`l10n:settingsNotifyMessages`) → `messages`
   - "Novos seguidores" (`l10n:settingsNotifyFollowers`) → `newFollowers`

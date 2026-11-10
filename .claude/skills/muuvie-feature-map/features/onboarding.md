@@ -1,6 +1,6 @@
 # Onboarding
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@010aa02 muuvie@05bd8fe · source: code
 
 A full-screen introduction to the app's concept, shown once per install over the main screen (not tied to sign-up or to an account), and again on demand from Configurações. Six panels, then open maratonas and CineClubes to join. Lives in `muuvie/ui/onboarding` and `muuvie/features/onboarding`; it has no endpoint of its own and borrows the Programação list endpoints.
 
@@ -12,7 +12,7 @@ A full-screen introduction to the app's concept, shown once per install over the
   3. "Registre cada sessão" (`l10n:onboardingLogsTitle`)
   4. "Maratonas e CineClubes" (`l10n:onboardingProgramacaoTitle`)
   5. "Amigos e uma vaquinha" (`l10n:onboardingSocialTitle`)
-  6. "Traga seu histórico" (`l10n:onboardingImportTitle`) with "Importar do Filmow" (`l10n:onboardingImportFilmow`): asks for login first (`AuthGate`), then closes the intro and opens `ImportStartRoute` (see [imports](imports.md)). Dismissing login keeps the intro open.
+  6. "Traga seu histórico" (`l10n:onboardingImportTitle`) with "Importar meu histórico" (`l10n:onboardingImportFilmow`): asks for login first (`AuthGate`), then closes the intro and opens `ImportStartRoute` (see [imports](imports.md)). Dismissing login keeps the intro open.
 - **suggestions:** last page "Em cartaz" (`l10n:onboardingSuggestionsTitle`): up to 3 open maratonas (title, "{n} participantes", `l10n:maratonaParticipants`) and up to 3 open CineClubes (title, movie). Spinner while loading; both empty or failed → "Nada aberto agora. Crie o primeiro na Programação!" (`l10n:onboardingSuggestionsEmpty`). Tapping one closes the intro and opens `MaratonaDetailRoute` / `CineClubeDetailRoute`. The button reads "Começar" (`l10n:onboardingStart`) and closes.
 - **seen:** Pular, Começar, back/swipe-dismiss, or leaving for import or a suggestion all write the seen file. There is no error state: a failed request just empties its list.
 - **replay:** Configurações › "Ver a introdução de novo" (`l10n:settingsShowIntro`) deletes the file and pushes the intro right away (see [settings](settings.md)).

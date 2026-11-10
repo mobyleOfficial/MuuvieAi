@@ -1,6 +1,6 @@
 # Profile
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@010aa02 muuvie@05bd8fe · source: code
 
 The signed-in user's own profile, the root of the Perfil tab: a header (banner, avatar, name, @handle, bio, links, counters), shortcuts, and six tabs. It also covers Editar perfil and the Destaques editor. The screen is `MemberProfileView` with `userId: 'me'`. [public-profile](public-profile.md) renders the same view for someone else, so the header and tabs below describe both. Two tabs are mapped elsewhere: Estantes in [shelves](shelves.md) and Locadoras in [locadoras](locadoras.md). Gráficos is in [stats](stats.md).
 
@@ -42,7 +42,7 @@ The signed-in user's own profile, the root of the Perfil tab: a header (banner, 
     - Cor de destaque: "Padrão" (`l10n:editProfileAccentDefault`) or a color.
     - Foto e banner: URLs only (`l10n:editProfileImagesHint`).
   - "Salvar" sends `PUT /users/me`. Errors show as snackbars: 409 gives "Este @ já está em uso", 400 gives `l10n:editProfileInvalidField`, anything else gives `l10n:editProfileSaveError`. On success the screen pops `true` and the header reloads.
-  - "Importar dados do Filmow" (`l10n:editProfileImportFilmow`) goes to [imports](imports.md); it is disabled while an import runs.
+  - "Importar dados do Filmow" and "Importar dados do Letterboxd" (`l10n:editProfileImportFilmow`, `l10n:editProfileImportLetterboxd`) both open [imports](imports.md); they are disabled while an import runs.
   - "Sair da conta" (`l10n:editProfileLogout`) asks for confirmation, then logs out (see [auth](auth.md)).
 
 ## How to get to it (user POV)
