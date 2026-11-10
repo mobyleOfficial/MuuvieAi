@@ -1,7 +1,7 @@
 ---
 date: 2026-11-10
 author: Bruno Bacelar Abe
-status: draft
+status: approved
 related:
   - feature-map
 tags: [backend, frontend, imports, letterboxd, filmow, csv]
@@ -9,7 +9,7 @@ tags: [backend, frontend, imports, letterboxd, filmow, csv]
 
 # Feature Spec: Import from a file (Filmow CSV and Letterboxd export)
 
-**Status:** Draft
+**Status:** Implemented (backend `93e9431`, muuvie `209a2f7`)
 **Scope:** Backend (`backend/`) and frontend (`muuvie/`)
 **Date:** 2026-11-10
 
@@ -134,34 +134,36 @@ No migration: `import_jobs.source` already allows `letterboxd` [Source: backend/
 
 ## 5. Backend design
 
-- `domain/usecase/imports`: `StartFileImport(source, files)` next to `StartImport`; same `ImportRepository.createJob` and `ImportJobQueue`.
-- `data/repository/imports/` (new, pure, no I/O besides the bytes given):
-  - `CsvReader` — RFC 4180 tokenizer (or `kotlin-csv`/`commons-csv` if the dependency is preferred; decide in the plan).
-  - `LetterboxdImportFormatParser` (§3.1), `LetterboxdExportParser` (§3.2 / §3.3), both → `ImportBundle`.
-  - `ImportFileClassifier` (§3.3).
-- The runner's read step needs the parsed bundle instead of a scrape. Generalise the queue input from `credentials: String` to a sealed `ImportInput` (`FilmowSession(cookies)` | `Parsed(bundle)`); the `ImportSourceReader` for files returns the bundle it is handed. Everything from `saveRead` on is untouched.
+As built (backend `93e9431`):
+
+- `domain/usecase/imports`: `StartFileImport(userId, source, files)` next to `StartImport`. It reads the files through the `ImportFileReader` contract first (a bad file raises before any job exists), creates the job, and moves it `pending → reading → preview` with `saveRead` in the same request. The background runner is not involved: there is nothing slow left to read, and confirming the preview goes through `ConfirmImport` and the runner's write step as before.
+- `data/imports/` (pure, no I/O besides the bytes given): `Csv` (RFC 4180 reader, no new dependency), `FileImportReader` (zip expansion, limits, classification of §3.3), `ImportBundleBuilder` (§3.1 and §3.2 into one `ImportBundle`) and the cell helpers in `ImportCsvFile.kt`.
+- Errors: `InvalidFileException` (400, codes `empty_file` / `unsupported_file` / `ambiguous_file`) and `PayloadTooLargeException` (413, `file_too_large`), mapped in `configureStatusPages`.
+- The route reads the multipart parts with Ktor 3's `provider()` (the build resolves Ktor 3.1.1 through the Ktor plugin's BOM, whatever the dependency lines say).
 - `knownTmdbId(LETTERBOXD, …)` already looks up `letterboxd_id` [Source: backend/src/main/kotlin/org/mobyle/data/local/imports/ImportDataSource.kt:217].
-- `enrichment.enrichImported(source, externalIds)` returns early for any source but Filmow and looks movies up by `filmow_id` [Source: backend/src/main/kotlin/org/mobyle/data/service/MovieEnrichmentService.kt:87]. It must find Letterboxd movies by `letterboxd_id`, and file-imported movies with a `title:` key by their catalog id (the writer's `movieIds` map), or they wait for the background loop.
+- `enrichment.enrichImported(source, externalIds)` returned early for any source but Filmow [Source: backend/src/main/kotlin/org/mobyle/data/service/MovieEnrichmentService.kt:87]. It now finds Letterboxd movies by `letterboxd_id` (`findDbIdsByLetterboxdIds`). Movies with a `title:` key are left to the background loop; they went through the resolver before writing, so the confident matches already carry their TMDB id.
 - Tests: parser tests against fixture files under `src/test/resources/imports/` (a real filmow_to_letterboxd output, a trimmed Letterboxd export zip, each loose file, malformed and ambiguous cases, BOM, quoted commas/newlines); a routing test for the multipart branch and its 400/413s.
 
 ## 6. App design
 
 - **Dependency:** `file_picker` (`.csv` and `.zip`, multiple), in `ui/imports`.
-- **Data:** `ImportsRemoteDataSource.startFileImport(source, files)` sends `FormData` through `HttpClient`; use case `StartFileImport` in `features/imports/domain`, registered `@injectable`.
+- **Data:** `ImportsRemoteDataSource.startFileImport(source, files)` sends `FormData` through `HttpClient`, one `file` part per file; use case `StartFileImport` in `features/imports/domain`, registered `@injectable`. 413 maps to the new `AppError.payloadTooLarge`.
 - **Start screen** (`ImportStartRoute`), under the current button:
   - "Enviar arquivo do Filmow" → a sheet explaining how to get it (run filmow_to_letterboxd, with a link to the repository) → picker (`.csv`, multiple).
   - "Enviar arquivo do Letterboxd" → a sheet: "No Letterboxd, vá em Settings › Data › Export your data e envie o .zip" (link `https://letterboxd.com/settings/data/`) → picker (`.zip` or `.csv`).
-  - On 202 the screen is replaced by `ImportJobRoute`, as the Filmow login does. A 400 shows the server's reason mapped to a pt-BR message per code; a 409 keeps `l10n:importInProgress`.
+  - On 202 the screen is replaced by `ImportJobRoute`, as the Filmow login does. `AppError` carries no server code, so every 400 shows one message ("Não conseguimos ler esse arquivo…"), a 413 another, and a 409 keeps `l10n:importInProgress`.
 - **History rows:** "Letterboxd · {inputRef}" works already; the source label needs a pt-BR string for `letterboxd`.
 - **Entry points:** show the hidden "Importar dados do Letterboxd" in Editar perfil [Source: muuvie/ui/profile/lib/edit_profile/edit_profile_screen.dart:14]; it opens `ImportStartRoute`.
-- **Preview for a Filmow file:** watchlist, favorites and lists are always 0 — the preview hides empty sections instead of listing zeros, and "Nenhuma lista encontrada no seu perfil." is replaced by nothing.
-- All strings in `app_pt.arb` + both Dart classes; the picker buttons and sheets get semantic labels and 48 dp targets.
+- **Preview for a Filmow file:** watchlist, favorites and lists are always 0 and the preview shows them as 0 with "Nenhuma lista encontrada no seu perfil.". Hiding the empty sections is left for later (§7).
+- Strings in the three ARBs (`app_en.arb` template, `app_es.arb`, `app_pt.arb`) and the generated Dart classes, edited by hand in this change. The file buttons are 48 dp outlined buttons with a text label.
 
 ## 7. Open questions
 
 1. **Several sessions per movie.** A Letterboxd diary can log the same movie many times (rewatches). The bundle holds one `watchedOn` per movie, so only the latest becomes a watch log. Supporting all of them means `ImportedMovie.watchLogs: List<…>` and a change to `upsertLog`. Phase 2?
 2. **Reviews and tags** (`reviews.csv`, diary `Tags`, import-format `Review`). Do watch logs have a place for review text in Muuvie? Ignored for now.
-3. **Re-importing Filmow by file after a login import.** File rows have no Filmow id, so a movie TMDB could not match becomes a second placeholder next to the one the login import created. Acceptable (both end up in the unmatched review), or match placeholders by `title:` key too?
+3. **Per-code error messages.** The app cannot tell `ambiguous_file` from `unsupported_file` because `AppError` drops the server's `error` key. Worth carrying the code through `Failure` for this and other features?
+4. **Preview of a file import.** Hide the sections that are always empty for a Filmow file (watchlist, favorites, lists)?
+5. **Re-importing Filmow by file after a login import.** File rows have no Filmow id, so a movie TMDB could not match becomes a second placeholder next to the one the login import created. Acceptable (both end up in the unmatched review), or match placeholders by `title:` key too?
 
 ## 8. Delivery
 
