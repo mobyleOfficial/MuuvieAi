@@ -86,6 +86,7 @@ curl -s "$API/persons/tmdb/6384" | jq '.person.name, (.credits | length)'
 App: push `MovieDetailRoute(movieId: <catalog id>, movieTitle: '…')`. Opening `PersonDetailRoute(personId: 0, tmdbPersonId: 6384, personName: 'Keanu Reeves')` takes a code change, because no screen pushes it.
 
 ## Gotchas
+- Inside a tab the shell draws the app bar (title and back arrow). Pushed over the shell, as from the [movie-universe](movie-universe.md) or a conversation, the detail draws its own (`TabIndexScope` check in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`).
 - `GET /movies` takes `id`, `tmdbId` or `filmowId`; the app only sends `id`. `GET /movies/{id}` looks the movie up by TMDB id despite the name, and the app never calls it.
 - `PersonDetailRoute` is registered under every tab and at the root, but nothing pushes it, and the cast cards are not tappable. So the person page and both `/persons` endpoints are unreachable from the UI.
 - `/events` returns maratonas and CineClubes, but "Na Programação" shows only the maratonas and is hidden when there are none. The CineClubes row comes from `/cineclubes` instead.
