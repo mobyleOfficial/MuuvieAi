@@ -159,13 +159,13 @@ As built (backend `93e9431`):
 
 ## 7. Decisions on the open questions (2026-11-10)
 
-1. **Several sessions per movie → import them all.** `ImportedMovie.watchDates` holds every diary date (and import-format `WatchedDate`); `watchedOn` stays the latest, for the date on "Já assisti". The writer creates one log per date; imported logs are unique per movie and day, whichever import or source brought them. All logs go on the current cycle; rewatch cycles are not rebuilt.
+1. **Several sessions per movie → import them all.** `ImportedMovie.watchDates` holds every diary date (and import-format `WatchedDate`); `watchedOn` stays the latest, for the date on "Já assisti". The writer creates one log per date; imported logs are unique per movie and day, whichever import or source brought them. Each session is a viewing (follow-up decision, same day): in date order the imported logs take cycles 1, 2, 3…, and `user_movies.currentCycle` / `rewatches` follow, so the stats count the rewatches. Cycles are left as they are on a row the user owns, on a movie with sessions logged in the app, or when the user already started a new cycle in the app.
 2. **Reviews → ratings.** `reviews.csv` (joined by title and year, as the diary) and the import format's `Review` column become `user_movies.review`, the review of the movie's rating; the latest one wins. A review needs a label to be shown on the rating, so for a movie without one (follow-up decision, same day) the review becomes the comment of the imported session of its date (`ImportedMovie.reviewOn`, the review's `Watched Date`), else of the latest imported session; with no session at all it is dropped. Comments are cut at 5 000 characters, the app's limit. The preview and the report say "N resenhas" for both. Truncated at 10 000 characters, the limit of a review written in the app. `preview.reviews` and `counts.reviews` count them.
 3. **Per-code errors → yes.** `Failure` carries the envelope's `error` key (`Failure.code`), filled by `DioHttpClient`. The import start maps `ambiguous_file`, `empty_file` and `file_too_large` to their own messages; other features can use the code the same way.
 4. **Preview → hide empty sections.** The preview and the report hide every count of 0, and the lists section when there are no lists (for every import, the Filmow login included).
 5. **Duplicates → the last import wins.** A movie TMDB did not match reuses the placeholder (no TMDB id) an earlier import made for the same normalized title and year, from any source, preferring one the user has. The last import takes it over: its source id is added, and on an imported `user_movies` row its rating, review, watch date and source replace the earlier ones (a row the user made in the Muuvie is still only filled, never overwritten). An earlier pending item of the same movie in the confirmation queue is marked `skipped`. This also keeps file reimports of movies keyed by title from making new placeholders.
 
-As built: backend `4be7c0e`, muuvie `c5a3668`.
+As built: backend `52203a1`, muuvie `c5a3668`.
 
 ## 8. Delivery
 
