@@ -167,6 +167,15 @@ As built (backend `93e9431`):
 
 As built: backend `52203a1`, muuvie `c5a3668`.
 
+## 7b. Follow-ups (branch `feature/csv-import-followups`)
+
+- **Letterboxd → TMDB id.** Before the title search, the runner reads each Letterboxd film's page (`boxd.it` → `letterboxd.com/film/<slug>/`, `<body data-tmdb-id data-tmdb-type>`), one every 250 ms; TV entries are skipped; three refusals in a row (403/429) switch the rest of the job to the title search.
+- **Tags → optional lists.** Diary and import-format `Tags` (comma-separated) become `ImportedList(externalId = "tag:<tag>", title = "#tag", optional = true)`. The preview marks them `optional`, the app leaves them unchecked with a hint, and `listsToImport: null` (or the auto-confirm) leaves them out.
+- **Same-day sessions.** Every diary entry is a session; two on one day are two logs (`…@date`, `…@date#2`). `reviews.csv` adds no session (its entries are diary entries).
+- **Year ±1.** The placeholder of an earlier import matches within a year, the same year first.
+- **Enrichment.** The writer reports the catalog ids it wrote and the runner enriches them right away, whatever the source, title-keyed movies included.
+- **App:** source-aware "import finished" snackbar; texts that named only Filmow name Letterboxd too; upload progress (`HttpClient.post(onSendProgress)`); "Ver como gerar" / "Abrir o Letterboxd" open the instructions; `importPreviewNoLists` removed; `Failure.code` forwarded by every data layer (a CineClube join answered `already_participating` counts as joined); `MuuvieModalScreen` paints on a `Material` so list-tile splashes show; widget tests for the start screen and the preview.
+
 ## 8. Delivery
 
 1. **Backend** (`backend`, branch `feature/csv-movie-import`): parsers + tests, `StartFileImport`, multipart route, generalised queue input, drop the 503.
