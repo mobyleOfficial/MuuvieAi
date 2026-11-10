@@ -157,13 +157,15 @@ As built (backend `93e9431`):
 - **Preview for a Filmow file:** watchlist, favorites and lists are always 0 and the preview shows them as 0 with "Nenhuma lista encontrada no seu perfil.". Hiding the empty sections is left for later (§7).
 - Strings in the three ARBs (`app_en.arb` template, `app_es.arb`, `app_pt.arb`) and the generated Dart classes, edited by hand in this change. The file buttons are 48 dp outlined buttons with a text label.
 
-## 7. Open questions
+## 7. Decisions on the open questions (2026-11-10)
 
-1. **Several sessions per movie.** A Letterboxd diary can log the same movie many times (rewatches). The bundle holds one `watchedOn` per movie, so only the latest becomes a watch log. Supporting all of them means `ImportedMovie.watchLogs: List<…>` and a change to `upsertLog`. Phase 2?
-2. **Reviews and tags** (`reviews.csv`, diary `Tags`, import-format `Review`). Do watch logs have a place for review text in Muuvie? Ignored for now.
-3. **Per-code error messages.** The app cannot tell `ambiguous_file` from `unsupported_file` because `AppError` drops the server's `error` key. Worth carrying the code through `Failure` for this and other features?
-4. **Preview of a file import.** Hide the sections that are always empty for a Filmow file (watchlist, favorites, lists)?
-5. **Re-importing Filmow by file after a login import.** File rows have no Filmow id, so a movie TMDB could not match becomes a second placeholder next to the one the login import created. Acceptable (both end up in the unmatched review), or match placeholders by `title:` key too?
+1. **Several sessions per movie → import them all.** `ImportedMovie.watchDates` holds every diary date (and import-format `WatchedDate`); `watchedOn` stays the latest, for the date on "Já assisti". The writer creates one log per date; imported logs are unique per movie and day, whichever import or source brought them. All logs go on the current cycle; rewatch cycles are not rebuilt.
+2. **Reviews → ratings.** `reviews.csv` (joined by title and year, as the diary) and the import format's `Review` column become `user_movies.review`, the review of the movie's rating; the latest one wins. A review needs a label to be shown, so a movie without stars keeps no review (unless the user's row already has a label). Truncated at 10 000 characters, the limit of a review written in the app. `preview.reviews` and `counts.reviews` count them.
+3. **Per-code errors → yes.** `Failure` carries the envelope's `error` key (`Failure.code`), filled by `DioHttpClient`. The import start maps `ambiguous_file`, `empty_file` and `file_too_large` to their own messages; other features can use the code the same way.
+4. **Preview → hide empty sections.** The preview and the report hide every count of 0, and the lists section when there are no lists (for every import, the Filmow login included).
+5. **Duplicates → the last import wins.** A movie TMDB did not match reuses the placeholder (no TMDB id) an earlier import made for the same normalized title and year, from any source, preferring one the user has. The last import takes it over: its source id is added, and on an imported `user_movies` row its rating, review, watch date and source replace the earlier ones (a row the user made in the Muuvie is still only filled, never overwritten). An earlier pending item of the same movie in the confirmation queue is marked `skipped`. This also keeps file reimports of movies keyed by title from making new placeholders.
+
+As built: backend `8082860`, muuvie `314a410`.
 
 ## 8. Delivery
 
