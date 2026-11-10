@@ -25,8 +25,8 @@ Bringing a history in from Filmow or Letterboxd. Filmow comes either from a logi
 ## How to get to it (user POV)
 - Perfil › Editar perfil › "Importar dados" › "Importar dados do Filmow" or "Importar dados do Letterboxd" (`l10n:editProfileImportSection`, `l10n:editProfileImportFilmow`, `l10n:editProfileImportLetterboxd`); both open the start screen ([profile](profile.md)).
 - Perfil › Configurações › "Importar filmes" (`l10n:settingsImport`) ([settings](settings.md)).
-- Perfil › Estantes › an empty "Já assisti" › "Já usa o Filmow? Traga seu histórico" (`l10n:watchedEmptyImport`).
-- The intro's last page, "Importar do Filmow" ([onboarding](onboarding.md)).
+- Perfil › Estantes › an empty "Já assisti" › "Já usa o Filmow ou o Letterboxd? Traga seu histórico" (`l10n:watchedEmptyImport`).
+- The intro's last page, "Importar meu histórico" ([onboarding](onboarding.md)).
 - An `import_updated` push opens `ImportJobRoute(jobId)`, or `ImportStartRoute` without a job id.
 
 ## Where it lives
