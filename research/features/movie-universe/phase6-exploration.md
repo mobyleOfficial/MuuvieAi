@@ -1,7 +1,7 @@
 ---
 date: 2026-11-10
 author: Bruno Bacelar Abe
-status: draft
+status: approved
 related:
   - research/features/movie-universe/roadmap.md
   - research/features/movie-universe/spike.md
@@ -127,8 +127,16 @@ Ficar no Flame. Reabrir quando o Flutter GPU sair do *preview* na documentação
 - **Trocar o `/similar` por vizinhos semânticos do catálogo inteiro (k-NN no pgvector):** o universo deixaria de depender da lista do TMDB e poderia ter mais de 10 planetas por sistema. Ficou de fora porque mudaria a natureza das órbitas e a fileira "Filmes Similares" do detalhe. É o próximo passo natural se o experimento for bem.
 - **`/recommendations` do TMDB:** continua em aberto, como no roadmap [Source: roadmap.md, "Alternative Approaches"].
 
+## Decisão
+
+Decidido em 2026-11-10, com o roadmap aprovado:
+
+- **Embeddings:** o experimento entra no próximo ciclo, num branch próprio (`feature/universe-synopsis-embeddings`), e não nos PRs das Fases 1 a 5. Motivos: troca a imagem do banco e o Postgres dos testes, que é uma mudança de infraestrutura com revisão própria. Também depende de uma `TMDB_API_KEY` no ambiente e de alguém para o teste cego, e nenhum dos dois estava disponível agora. O universo já funciona bem com os três sinais atuais, então nada fica bloqueado.
+- **3D:** fica no Flame, como recomendado.
+
 ## Next Steps
 
-- [ ] Decidir se o experimento de embeddings entra no próximo ciclo (decision gate: Bruno).
-- [ ] Rodar o experimento com uma `TMDB_API_KEY` válida no ambiente. Ela não estava disponível nesta sessão, então não houve protótipo com sinopses reais.
+- [x] Decidir se o experimento de embeddings entra no próximo ciclo (sim, como feature própria).
+- [ ] Abrir `feature/universe-synopsis-embeddings` no `backend` a partir de `dev`, depois do merge dos PRs do universo, e seguir os passos 1 a 3 de "Recommended Approach".
+- [ ] Rodar o teste cego (passo 4) com uma `TMDB_API_KEY` válida no ambiente.
 - [ ] Reavaliar o 3D quando o Flutter GPU sair do *preview*.

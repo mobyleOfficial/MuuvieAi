@@ -23,8 +23,9 @@ It also covers the person page `PersonDetailRoute`, which nothing in the app ope
   - "Histórico" (`l10n:historyTitle`) opens `MovieHistoryRoute`; it is missing for guests.
 
   Below the tiles: a progress bar while the current cycle is unfinished, "Registrar sessão" (`l10n:watchLogAction`) → `LogSessionRoute`, and the "Ações" button (`l10n:movieDetailActions`, a "⋯" icon). A failed quick action shows "Não deu para atualizar. Tente de novo." (`l10n:watchStateError`). Saving a rating or a session reloads the Comunidade sections.
-- **actions-sheet:** a bottom sheet (`_showActionsSheet` in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`, not a route) titled with the movie. Each row closes the sheet and goes through login first.
+- **actions-sheet:** a bottom sheet (`_showActionsSheet` in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`, not a route) titled with the movie. Each row closes the sheet and goes through login first, except "Explorar universo".
   - "Adicionar à estante…" (`l10n:addToShelvesAction`) → `AddToShelvesRoute`; back here it shows "Salvo em N estantes" (`l10n:addToShelvesSaved`). See [shelves](shelves.md).
+  - "Explorar universo" (`l10n:universeAction`) → `MovieUniverseRoute`, no login needed ([movie-universe](movie-universe.md)).
   - "Criar CineClube com este filme" (`l10n:movieDetailCreateCineClube`) → `CineClubeEditorRoute` with the movie as the first session ([cineclubes](cineclubes.md)).
   - "Sessão sincronizada" (`l10n:movieDetailWatchParty`) → `WatchPartyRoute` ([games](games.md)).
 - **about-tab:** "Sobre" (`l10n:movieDetailAboutTab`).

@@ -1,7 +1,7 @@
 ---
 date: 2026-11-09
 author: Bruno Bacelar Abe
-status: draft
+status: approved
 related:
   - .claude/skills/muuvie-feature-map/features/movie-detail.md
 tags: [frontend, backend, flutter, flame, recommendations, roadmap]
@@ -284,10 +284,10 @@ Implementado no branch `feature/movie-universe` do `backend/` (commitado, ainda 
 
 ## Next Steps
 
-- [ ] Aprovar este roadmap (decision gate: Bruno).
+- [x] Aprovar este roadmap (decision gate: Bruno, aprovado em 2026-11-10).
 - [x] Endpoint `GET /api/v1/movies/{id}/similar` no backend (branch `feature/movie-universe`, sem commit).
 - [x] Revisar o endpoint e commitar no `backend` (branch `feature/movie-universe`).
-- [ ] Abrir o PR do `backend` para `dev`.
+- [x] Abrir o PR do `backend` para `dev`.
 - [x] Fase 1 implementada no `muuvie/` (branch `feature/movie-universe`).
 - [x] Fase 0 medida no moto g9 plus ([spike.md](spike.md)). O gate passou.
 - [x] Fase 1 validada no aparelho: mapa, toque, card e modo lista.
@@ -295,11 +295,12 @@ Implementado no branch `feature/movie-universe` do `backend/` (commitado, ainda 
 - [x] Testar com TalkBack ligado (árvore de acessibilidade lida no aparelho).
 - [x] Tocar na estrela de outro sistema no aparelho: o foco vai para aquele sistema.
 - [x] Exploração de 15 minutos: memória estável ([spike.md](spike.md)).
-- [ ] Commitar e abrir os PRs do `backend` e do `muuvie` para `dev`. Depois, atualizar as refs dos submódulos e a página `movie-detail` do feature map (`/map-features`).
+- [x] Commitar e abrir os PRs do `backend` e do `muuvie` para `dev`. Depois, atualizar as refs dos submódulos e o feature map: página nova `movie-universe`, mais `movie-detail` e `gamification`.
 - [x] Fase 3: score de similaridade no endpoint e universo em chunks (commits, sem PR).
 - [x] Fase 4: personalização (selos, "Quero ver", estantes, filtros e "Em comum"; commits, sem PR).
 - [x] Fase 4: atualizar os selos depois de "Adicionar à estante" e do login.
 - [x] Fase 5: rota compartilhada, vaquinhas exploradoras e constelações (commits, sem PR).
 - [x] Fase 3: cache negativo de similares e enriquecimento antecipado.
 - [x] Fase 6: avaliação de embeddings e 3D ([phase6-exploration.md](phase6-exploration.md)).
-- [ ] Fase 6: decidir sobre o experimento de embeddings (decision gate: Bruno).
+- [x] Fase 6: decidir sobre o experimento de embeddings. Decisão: entra no próximo ciclo como feature própria, fora destes PRs ([phase6-exploration.md](phase6-exploration.md), "Decisão").
+- [ ] Revisar e fazer o merge dos PRs para `dev` (`backend`, `muuvie` e meta-repo).

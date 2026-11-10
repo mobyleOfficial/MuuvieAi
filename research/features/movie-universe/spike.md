@@ -1,7 +1,7 @@
 ---
 date: 2026-11-09
 author: Bruno Bacelar Abe
-status: draft
+status: approved
 related:
   - research/features/movie-universe/roadmap.md
 tags: [frontend, flutter, flame, performance, spike]
