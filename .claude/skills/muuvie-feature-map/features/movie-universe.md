@@ -1,6 +1,6 @@
 # Movie universe
 
-> Mapped at backend@9c27152 muuvie@7a08b8e · source: code + app (2026-11-10)
+> Mapped at backend@9c27152 muuvie@e8d2259 · source: code + app (2026-11-10)
 
 A full-screen map of the movies similar to one movie, drawn as a star system in Flame: the movie is the star and its similar movies orbit it, closer when they are more alike. Tapping a planet opens a card; "Viajar" makes that planet the star of a new system, so the user hops from movie to movie. It opens from a movie's page and works without login; login only adds the viewer's state and the actions that write. Design and phases: `research/features/movie-universe/roadmap.md`.
 
@@ -16,7 +16,7 @@ A full-screen map of the movies similar to one movie, drawn as a star system in 
 - **explorer pets:** with login, each system visited is recorded once per user. 10 systems unlock `l10n:petFoguete` Foguete (common), 50 `l10n:petAstronauta` Astronauta (rare); a snackbar `l10n:universeUnlockedPet` with `l10n:universeSeePet` opens `ShelterRoute` ([gamification](gamification.md)).
 
 ## How to get to it (user POV)
-A movie's page › "Ações" (⋯, `l10n:movieDetailActions`) › "Explorar universo" (`l10n:universeAction`). It opens for guests too, without the login step the other rows have. No deep link.
+A movie's page › "Ações" (⋯, `l10n:movieDetailActions`) › "Explorar universo" (`l10n:universeAction`). It opens for guests too, without the login step the other rows have. No deep link. Only one universe at a time: a movie page opened from a universe (directly or through other movie pages) does not offer "Explorar universo".
 
 ## Where it lives
 ### App
