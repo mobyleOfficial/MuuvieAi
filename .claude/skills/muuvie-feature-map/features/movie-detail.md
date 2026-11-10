@@ -23,8 +23,9 @@ It also covers the person page `PersonDetailRoute`, which nothing in the app ope
   - "Histórico" (`l10n:historyTitle`) opens `MovieHistoryRoute`; it is missing for guests.
 
   Below the tiles: a progress bar while the current cycle is unfinished, "Registrar sessão" (`l10n:watchLogAction`) → `LogSessionRoute`, and the "Ações" button (`l10n:movieDetailActions`, a "⋯" icon). A failed quick action shows "Não deu para atualizar. Tente de novo." (`l10n:watchStateError`). Saving a rating or a session reloads the Comunidade sections.
-- **actions-sheet:** a bottom sheet (`_showActionsSheet` in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`, not a route) titled with the movie. Each row closes the sheet and goes through login first.
+- **actions-sheet:** a bottom sheet (`_showActionsSheet` in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`, not a route) titled with the movie. Each row closes the sheet and goes through login first, except "Explorar universo".
   - "Adicionar à estante…" (`l10n:addToShelvesAction`) → `AddToShelvesRoute`; back here it shows "Salvo em N estantes" (`l10n:addToShelvesSaved`). See [shelves](shelves.md).
+  - "Explorar universo" (`l10n:universeAction`) → `MovieUniverseRoute`, no login needed, and not offered while a universe is already open under this page ([movie-universe](movie-universe.md)).
   - "Criar CineClube com este filme" (`l10n:movieDetailCreateCineClube`) → `CineClubeEditorRoute` with the movie as the first session ([cineclubes](cineclubes.md)).
   - "Sessão sincronizada" (`l10n:movieDetailWatchParty`) → `WatchPartyRoute` ([games](games.md)).
 - **about-tab:** "Sobre" (`l10n:movieDetailAboutTab`).
@@ -85,6 +86,7 @@ curl -s "$API/persons/tmdb/6384" | jq '.person.name, (.credits | length)'
 App: push `MovieDetailRoute(movieId: <catalog id>, movieTitle: '…')`. Opening `PersonDetailRoute(personId: 0, tmdbPersonId: 6384, personName: 'Keanu Reeves')` takes a code change, because no screen pushes it.
 
 ## Gotchas
+- Inside a tab the shell draws the app bar (title and back arrow). Pushed over the shell, as from the [movie-universe](movie-universe.md) or a conversation, the detail draws its own (`TabIndexScope` check in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`).
 - `GET /movies` takes `id`, `tmdbId` or `filmowId`; the app only sends `id`. `GET /movies/{id}` looks the movie up by TMDB id despite the name, and the app never calls it.
 - `PersonDetailRoute` is registered under every tab and at the root, but nothing pushes it, and the cast cards are not tappable. So the person page and both `/persons` endpoints are unreachable from the UI.
 - `/events` returns maratonas and CineClubes, but "Na Programação" shows only the maratonas and is hidden when there are none. The CineClubes row comes from `/cineclubes` instead.
