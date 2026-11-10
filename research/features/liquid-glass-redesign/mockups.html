@@ -1,0 +1,489 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+body{background:#0c0d0f;color:#eee;font-family:-apple-system,system-ui,sans-serif;padding:24px 28px;max-width:1500px}
+h2{margin:0 0 6px} h3.sec-t{margin:34px 0 4px;font-size:20px}
+.subtitle,.note{font-size:13px;opacity:.75;max-width:980px;line-height:1.5}
+.row-of-phones{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin:14px 0 10px}
+.pick{display:flex;flex-direction:column;gap:8px;cursor:pointer;border-radius:22px;padding:10px;border:2px solid transparent}
+.pick.selected{border-color:#FFD1DC}
+.pick h4{margin:0;font-size:14px}
+.pick p{margin:0;font-size:12px;opacity:.72;max-width:300px;line-height:1.45}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:6px;margin-right:6px;vertical-align:1px}
+.tag.ios{background:#2b2d33;color:#cfd3da}.tag.and{background:#23342a;color:#9fe0b0}.tag.now{background:#3a2a1c;color:#f3c48b}
+
+/* phone frame */
+.phone{width:300px;height:640px;border-radius:44px;background:#121316;position:relative;overflow:hidden;flex-shrink:0;
+  box-shadow:0 0 0 9px #050506,0 20px 50px rgba(0,0,0,.5);color:#fff;font-family:-apple-system,"SF Pro Text",system-ui,sans-serif}
+.phone.android{border-radius:34px;font-family:Roboto,"Google Sans",system-ui,sans-serif}
+.phone.light{background:#FDFBFF;color:#1A1C1E}
+.status{height:42px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;font-weight:600;position:relative;z-index:5}
+.android .status{height:30px;padding:0 20px;font-size:12px;font-weight:500}
+.scroll{position:absolute;inset:0;overflow:hidden}
+
+/* iOS glass */
+.glass{background:rgba(255,255,255,.11);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%);
+  border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 18px rgba(0,0,0,.28)}
+.light .glass{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.8);box-shadow:inset 0 1px 0 #fff,0 6px 18px rgba(0,0,0,.10)}
+.gbtn{border-radius:999px;display:flex;align-items:center;justify-content:center}
+.prom{background:#FFD1DC;color:#5C3742;font-weight:700;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 6px 18px rgba(255,209,220,.25)}
+
+/* M3 expressive */
+.tonal{background:rgba(255,209,220,.14);color:#FFD1DC;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.m3fill{background:#FFD1DC;color:#5C3742;font-weight:600;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.m3card{background:#1E2022;border-radius:24px}
+.btngroup{display:flex;gap:3px}
+.btngroup>div{flex:1;height:44px;background:#2a2c30;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10.5px;gap:1px}
+.btngroup>div:first-child{border-radius:22px 8px 8px 22px}.btngroup>div:last-child{border-radius:8px 22px 22px 8px}
+.btngroup>div:not(:first-child):not(:last-child){border-radius:8px}
+.btngroup>div.on{background:#FFD1DC;color:#5C3742;border-radius:22px!important;font-weight:600}
+
+/* posters */
+.pos{border-radius:10px;flex-shrink:0;position:relative;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.pos::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.18)}
+.pt{position:absolute;left:7px;right:7px;bottom:7px;font-size:9px;font-weight:700;line-height:1.1;font-family:Georgia,serif;text-shadow:0 1px 3px rgba(0,0,0,.6);color:#fff}
+.p1{background:linear-gradient(160deg,#c9a27a,#6b3a2c 55%,#2a1514)} .p2{background:linear-gradient(160deg,#e3b04b,#8a4b1f 60%,#2b160b)}
+.p3{background:linear-gradient(160deg,#6fa3c8,#24476b 60%,#0e1a2a)} .p4{background:linear-gradient(160deg,#d6d0c0,#7d7462 60%,#2e2a22)}
+.p5{background:linear-gradient(160deg,#c94f4f,#5e1d26 60%,#1e0b0e)} .p6{background:linear-gradient(160deg,#7fb08a,#2f4f3a 60%,#11201a)}
+.p7{background:linear-gradient(160deg,#b07cc6,#4b2c5e 60%,#1b1022)} .p8{background:linear-gradient(160deg,#e6c86e,#7a6326 60%,#251d0b)}
+.rate{position:absolute;top:5px;right:5px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;z-index:2}
+
+.sub{color:rgba(255,255,255,.6)} .light .sub{color:rgba(26,28,30,.6)}
+.pink{color:#FFD1DC} .light .pink{color:#9b4a60}
+.lt{font-size:31px;font-weight:800;padding:2px 18px 8px;letter-spacing:-.5px}
+.shelf-h{font-size:17px;font-weight:700;padding:14px 18px 8px;display:flex;justify-content:space-between;align-items:baseline}
+.shelf-h small{font-size:12.5px;font-weight:500;color:#FFD1DC}
+.hrow{display:flex;gap:10px;padding:0 18px}
+.prog{height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}.prog i{display:block;height:100%;background:#FFD1DC;border-radius:2px}
+.seg{display:flex;padding:3px;border-radius:999px;gap:2px}
+.seg div{flex:1;text-align:center;font-size:12px;font-weight:600;padding:6px 0;border-radius:999px;color:rgba(255,255,255,.7)}
+.seg div.on{background:rgba(255,255,255,.18);color:#fff}
+.light .seg div{color:rgba(26,28,30,.6)} .light .seg div.on{background:#fff;color:#1A1C1E;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+/* iOS floating tab bar */
+.tabbar{position:absolute;left:14px;right:14px;bottom:16px;height:58px;border-radius:32px;display:flex;align-items:center;padding:4px;gap:2px;z-index:8}
+.tab{flex:1;height:100%;border-radius:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9.5px;gap:3px;color:rgba(255,255,255,.75)}
+.tab b{font-size:16px;font-weight:400;line-height:1}
+.tab.on{background:rgba(255,255,255,.14);color:#FFD1DC}
+.light .tab{color:rgba(26,28,30,.7)} .light .tab.on{background:rgba(0,0,0,.06);color:#9b4a60}
+/* android nav bar */
+.navbar{position:absolute;left:0;right:0;bottom:0;height:72px;background:#1E2022;display:flex;align-items:center;justify-content:space-around;padding-bottom:6px;z-index:8}
+.nav{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:rgba(255,255,255,.7);width:56px}
+.nav b{display:flex;width:52px;height:30px;border-radius:15px;align-items:center;justify-content:center;font-size:15px;font-weight:400}
+.nav.on{color:#fff;font-weight:600}.nav.on b{background:#6E4350;color:#FFD1DC}
+.gesture{position:absolute;bottom:5px;left:50%;width:100px;margin-left:-50px;height:4px;border-radius:2px;background:rgba(255,255,255,.5);z-index:9}
+.feat{font-size:12px;line-height:1.45}
+.bul{font-size:12.5px;line-height:1.55;max-width:980px;opacity:.85}
+.bul li{margin:3px 0}
+code{background:#1d1f23;padding:1px 5px;border-radius:4px;font-size:11.5px}
+</style><script>function toggleSelect(el){el.classList.toggle("selected")}</script>
+</head><body>
+
+<h2>Muuvie redesign: all mockups so far</h2>
+<p class="subtitle">Same idea as the Abbay redesign (AbbayiOS #166), adapted to a movie app. Stop painting opaque fills over everything. Let the poster pick the screen's colour. Put glass only on controls that float over content. Use one poster component everywhere.
+Each screen is drawn twice: <span class="tag ios">iOS</span> Liquid Glass and <span class="tag and">ANDROID</span> Material 3 Expressive. Both use the same layout, with each platform's own chrome. Posters are placeholder gradients and the copy is the app's real pt-BR. Click the options you prefer, then reply in the terminal.</p>
+
+<!-- ================= 1. MOVIE DETAIL ================= -->
+<h3 class="sec-t">1 · Movie detail (<code>MovieDetailRoute</code>)</h3>
+<p class="note">Today: a 280 px backdrop that fades to an opaque surface, a 112 px poster overlapping it, an opaque outlined "watch panel" box with five round tiles, and an opaque pinned tab bar. Your "Já assisti / Avaliar / Registrar sessão" actions sit about 450 px down the page.</p>
+<div class="row-of-phones">
+
+  <!-- A iOS -->
+  <div class="pick" data-choice="detail-a" onclick="toggleSelect(this)">
+    <div class="phone" style="background:linear-gradient(180deg,#5b3226 0%,#3a211b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div style="display:flex;justify-content:space-between;padding:2px 14px">
+        <div class="glass gbtn" style="width:38px;height:38px;font-size:20px">‹</div>
+        <div style="display:flex;gap:8px"><div class="glass gbtn" style="width:38px;height:38px;font-size:13px">▶</div><div class="glass gbtn" style="width:38px;height:38px;font-size:16px">⋯</div></div>
+      </div>
+      <div class="pos p1" style="width:138px;height:207px;margin:6px auto 0;border-radius:14px;box-shadow:0 20px 44px rgba(0,0,0,.6)"><div class="pt" style="font-size:15px;left:12px;bottom:12px">Ainda Estou Aqui</div></div>
+      <div style="text-align:center;padding:14px 22px 0">
+        <div style="font-size:21px;font-weight:800;letter-spacing:-.3px">Ainda Estou Aqui</div>
+        <div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama · Walter Salles</div>
+      </div>
+      <div style="display:flex;gap:8px;padding:16px 18px 0">
+        <div class="glass gbtn" style="flex:1;height:40px;font-size:12.5px;font-weight:600;gap:5px">✓ Já assisti</div>
+        <div class="glass gbtn" style="flex:1;height:40px;font-size:12.5px;font-weight:600;gap:5px"><span class="pink">★★★★</span>½</div>
+        <div class="glass gbtn" style="width:40px;height:40px;font-size:15px">⋯</div>
+      </div>
+      <div class="prom" style="margin:10px 18px 0;height:46px;font-size:15px">＋ Registrar sessão</div>
+      <div class="glass seg" style="margin:16px 18px 0"><div class="on">Sobre</div><div>Comunidade</div><div>Atividade</div></div>
+      <div style="padding:12px 20px 0;font-size:12.5px;line-height:1.45" class="sub">Rio, 1971. Eunice Paiva vê a família ser despedaçada quando o marido é levado pela ditadura…</div>
+      <div class="glass tabbar"><div class="tab"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab on"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span>A · Poster-tinted hero</h4>
+    <p>The background comes from the poster's colour. A large centred poster, then the title. Your watch state is in glass pills, and <b>Registrar sessão</b> is the one strong pink button. The Sobre / Comunidade / Atividade tabs become a glass segmented control. Trailer (▶) and Ações (⋯) move to glass buttons in the header.</p>
+  </div>
+
+  <!-- A Android -->
+  <div class="pick" data-choice="detail-a-android" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4a2c24 0%,#2f1f1b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 12px">
+        <div class="tonal" style="width:40px;height:40px;font-size:18px;color:#fff;background:rgba(255,255,255,.12)">←</div>
+        <div style="display:flex;gap:8px"><div class="tonal" style="width:40px;height:40px;font-size:13px;color:#fff;background:rgba(255,255,255,.12)">▶</div><div class="tonal" style="width:40px;height:40px;font-size:16px;color:#fff;background:rgba(255,255,255,.12)">⋮</div></div>
+      </div>
+      <div class="pos p1" style="width:138px;height:207px;margin:4px auto 0;border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.55)"><div class="pt" style="font-size:15px;left:12px;bottom:12px">Ainda Estou Aqui</div></div>
+      <div style="text-align:center;padding:14px 22px 0">
+        <div style="font-size:22px;font-weight:700">Ainda Estou Aqui</div>
+        <div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama · Walter Salles</div>
+      </div>
+      <div class="btngroup" style="padding:16px 16px 0"><div class="on">✓<span>Já assisti</span></div><div>★<span>Avaliar</span></div><div>◷<span>Assistindo</span></div><div>⋯<span>Ações</span></div></div>
+      <div class="m3fill" style="margin:10px 16px 0;height:52px;font-size:15px;border-radius:18px">＋  Registrar sessão</div>
+      <div style="display:flex;margin:14px 0 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:600">
+        <div style="flex:1;text-align:center;padding:9px 0;color:#FFD1DC;border-bottom:3px solid #FFD1DC;border-radius:0 0 0 0">Sobre</div><div class="sub" style="flex:1;text-align:center;padding:9px 0">Comunidade</div><div class="sub" style="flex:1;text-align:center;padding:9px 0">Atividade</div></div>
+      <div style="padding:10px 18px 0;font-size:12.5px;line-height:1.45" class="sub">Rio, 1971. Eunice Paiva vê a família ser despedaçada…</div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>A · Same hero, M3 Expressive</h4>
+    <p>The same tint, poster and order. The glass pills become a <b>connected button group</b>; the selected one turns pink and goes fully round, which is Expressive's shape-morph. Below it is a large filled "Registrar sessão" button and standard primary tabs. Flutter can take the colour from the poster on both platforms (<code>ColorScheme.fromImageProvider</code>).</p>
+  </div>
+
+  <!-- B iOS -->
+  <div class="pick" data-choice="detail-b" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="scroll">
+        <div class="p1" style="height:300px;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,0) 30%,rgba(18,19,22,.0) 55%,#121316 100%)"></div>
+          <div style="position:absolute;left:18px;bottom:24px;font-family:Georgia,serif;font-size:11px;opacity:.6">[ backdrop still ]</div></div>
+      </div>
+      <div class="status" style="position:absolute;top:0;left:0;right:0"><span>9:41</span><span>●●● ▮</span></div>
+      <div style="position:absolute;top:44px;left:14px;right:14px;display:flex;justify-content:space-between;z-index:5">
+        <div class="glass gbtn" style="width:38px;height:38px;font-size:20px">‹</div>
+        <div class="glass gbtn" style="height:38px;padding:0 14px;font-size:12.5px;font-weight:600;gap:6px">▶ Ver trailer</div>
+      </div>
+      <div style="position:absolute;top:226px;left:18px;right:18px;display:flex;gap:14px;align-items:flex-end;z-index:4">
+        <div class="pos p1" style="width:92px;height:138px;border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.6)"></div>
+        <div style="padding-bottom:4px">
+          <div style="font-size:20px;font-weight:800;line-height:1.1">Ainda Estou Aqui</div>
+          <div class="sub" style="font-size:12px;margin-top:4px">2024 · 137 min</div>
+          <div style="display:flex;gap:5px;margin-top:6px"><span class="glass" style="font-size:10px;padding:2px 8px;border-radius:999px">Drama</span><span class="glass" style="font-size:10px;padding:2px 8px;border-radius:999px">Biografia</span></div>
+        </div>
+      </div>
+      <div style="position:absolute;top:382px;left:0;right:0">
+        <div class="glass seg" style="margin:0 18px"><div class="on">Sobre</div><div>Comunidade</div><div>Atividade</div></div>
+        <div style="padding:12px 20px 0;font-size:13px;font-weight:700">Sinopse</div>
+        <div class="sub" style="padding:4px 20px 0;font-size:12.5px;line-height:1.45">Rio, 1971. Eunice Paiva vê a família ser despedaçada quando o marido é levado… <span class="pink">Ler mais</span></div>
+      </div>
+      <!-- floating action bar -->
+      <div class="glass" style="position:absolute;left:14px;right:14px;bottom:86px;height:54px;border-radius:30px;display:flex;align-items:center;gap:6px;padding:0 6px;z-index:8">
+        <div class="gbtn" style="width:42px;height:42px;background:rgba(255,255,255,.12);font-size:15px">✓</div>
+        <div class="gbtn" style="width:42px;height:42px;background:rgba(255,255,255,.08);font-size:13px" ><span class="pink">★</span></div>
+        <div class="gbtn" style="width:42px;height:42px;background:rgba(255,255,255,.08);font-size:15px">⋯</div>
+        <div class="prom" style="flex:1;height:42px;font-size:13.5px">＋ Registrar sessão</div>
+      </div>
+      <div class="glass tabbar"><div class="tab"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab on"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span>B · Full-bleed backdrop and a floating action bar</h4>
+    <p>The backdrop runs edge to edge under the status bar, with the poster and title on top of its fade. The watch actions move into a <b>glass bar that floats above the tab bar</b> and stays reachable while you scroll the Sobre, Comunidade and Atividade content. Closer to how today's layout looks, but the actions are always one tap away.</p>
+  </div>
+</div>
+
+<!-- ================= 2. CATÁLOGO ================= -->
+<h3 class="sec-t">2 · Catálogo (<code>SearchTab</code>, the discover hub)</h3>
+<p class="note">Today: a pill search field, rows of 112×168 posters with a 26 px rating circle, 260×168 shelf cards, and an "Explorar" grid of opaque tiles. Poster corner radii vary between 6, 8 and 12 across the app.</p>
+<div class="row-of-phones">
+
+  <div class="pick" data-choice="catalog-a" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="lt">Catálogo</div>
+      <div class="glass" style="margin:0 16px 4px;height:38px;border-radius:999px;display:flex;align-items:center;gap:7px;padding:0 13px;font-size:13.5px;color:rgba(255,255,255,.5)">⌕ Filmes, pessoas, estantes e mais</div>
+      <!-- continue card -->
+      <div style="margin:12px 16px 0;border-radius:22px;padding:12px;display:flex;gap:12px;background:linear-gradient(120deg,#4a2a52,#24182a 70%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)">
+        <div class="pos p7" style="width:58px;height:87px;border-radius:9px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-size:10.5px;letter-spacing:.06em;font-weight:700" class="pink">ASSISTINDO AGORA</div>
+          <div style="font-size:14.5px;font-weight:700;margin-top:2px">Bacurau</div><div class="sub" style="font-size:11.5px">Sessão 2 · parou em 1h 12m</div></div>
+          <div style="display:flex;align-items:center;gap:8px"><div class="prog" style="flex:1"><i style="width:55%"></i></div><div class="prom" style="height:26px;padding:0 11px;font-size:11.5px">Registrar</div></div>
+        </div>
+      </div>
+      <div class="shelf-h">Em alta no Muuvie <small>Ver tudo</small></div>
+      <div class="hrow">
+        <div><div class="pos p2" style="width:84px;height:126px"><span class="glass rate">4,6</span><div class="pt">Cidade de Deus</div></div></div>
+        <div><div class="pos p3" style="width:84px;height:126px"><span class="glass rate">4,2</span><div class="pt">Central do Brasil</div></div></div>
+        <div><div class="pos p4" style="width:84px;height:126px"><span class="glass rate">4,4</span><div class="pt">O Auto da Compadecida</div></div></div>
+      </div>
+      <div class="shelf-h">Estantes mais populares <small>Ver tudo</small></div>
+      <div class="hrow">
+        <div style="width:170px;height:96px;border-radius:18px;background:linear-gradient(135deg,#3a2430,#1e2022);padding:10px;position:relative;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.1)">
+          <div style="display:flex"><div class="pos p5" style="width:36px;height:54px;border-radius:6px"></div><div class="pos p6" style="width:36px;height:54px;border-radius:6px;margin-left:-10px"></div><div class="pos p8" style="width:36px;height:54px;border-radius:6px;margin-left:-10px"></div></div>
+          <div style="font-size:12px;font-weight:700;margin-top:6px">Cinema Novo essencial</div></div>
+        <div style="width:110px;height:96px;border-radius:18px;background:#1E2022"></div>
+      </div>
+      <div class="glass tabbar"><div class="tab"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab on"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span>A · Large title, shelves and a "continue" card</h4>
+    <p>The same rows as today, cleaned up: one poster size and radius, the rating as a small glass chip on the poster corner, and shelf cards that show their own covers fanned out. A card <b>"Assistindo agora"</b> at the top (the one already on Perfil) gives one-tap logging, like Abbay's Continue card.</p>
+  </div>
+
+  <div class="pick" data-choice="catalog-b" onclick="toggleSelect(this)">
+    <div class="phone">
+      <div class="p2" style="position:absolute;top:0;left:0;right:0;height:360px"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,0) 35%,#121316 96%)"></div></div>
+      <div class="status" style="position:relative"><span>9:41</span><span>●●● ▮</span></div>
+      <div style="position:relative;display:flex;justify-content:space-between;align-items:center;padding:2px 16px">
+        <div style="font-size:26px;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.4)">Catálogo</div>
+        <div class="glass gbtn" style="width:38px;height:38px;font-size:15px">⌕</div></div>
+      <div style="position:relative;margin-top:150px;padding:0 18px">
+        <div style="font-size:10.5px;letter-spacing:.06em;font-weight:700" class="pink">#1 EM ALTA NO MUUVIE</div>
+        <div style="font-size:24px;font-weight:800;margin-top:2px">Cidade de Deus</div>
+        <div class="sub" style="font-size:12px">2002 · Crime · ★ 4,6</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><div class="prom" style="height:36px;padding:0 16px;font-size:13px">＋ Quero ver</div><div class="glass gbtn" style="height:36px;padding:0 14px;font-size:13px;font-weight:600">Detalhes</div></div>
+        <div style="display:flex;gap:5px;margin-top:12px;justify-content:center"><i style="width:16px;height:5px;border-radius:3px;background:#fff"></i><i style="width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.4)"></i><i style="width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.4)"></i></div>
+      </div>
+      <div class="shelf-h" style="position:relative">Em cartaz e lançamentos <small>Ver tudo</small></div>
+      <div class="hrow" style="position:relative">
+        <div class="pos p3" style="width:84px;height:126px"></div><div class="pos p5" style="width:84px;height:126px"></div><div class="pos p6" style="width:84px;height:126px"></div></div>
+      <div class="glass tabbar"><div class="tab"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab on"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span>B · Hero carousel</h4>
+    <p>A swipeable backdrop hero of the top "Em alta" titles runs under the status bar, and the rows follow below it. Search becomes a glass button in the corner. It feels more like a streaming app, at the cost of pushing the rows down. It needs backdrop images in the trending payload; check the API.</p>
+  </div>
+
+  <div class="pick" data-choice="catalog-a-android" onclick="toggleSelect(this)">
+    <div class="phone android">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="margin:6px 14px 0;height:52px;border-radius:999px;background:#1E2022;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:14px;color:rgba(255,255,255,.6)">⌕ Filmes, pessoas, estantes e mais<span style="margin-left:auto;width:30px;height:30px;border-radius:50%;background:#6E4350;display:flex;align-items:center;justify-content:center;font-size:12px;color:#FFD1DC">◉</span></div>
+      <div class="m3card" style="margin:14px 14px 0;padding:12px;display:flex;gap:12px;background:linear-gradient(120deg,#3d2744,#1E2022 75%)">
+        <div class="pos p7" style="width:58px;height:87px;border-radius:14px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+          <div><div style="font-size:11px;font-weight:600" class="pink">Assistindo agora</div><div style="font-size:15px;font-weight:600;margin-top:2px">Bacurau</div><div class="sub" style="font-size:11.5px">Sessão 2 · parou em 1h 12m</div></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.15);position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:55%;border-radius:3px;background:#FFD1DC"></i></div><div class="m3fill" style="height:32px;padding:0 14px;font-size:12px">Registrar</div></div>
+        </div></div>
+      <div class="shelf-h" style="font-weight:600">Em alta no Muuvie <small>Ver tudo</small></div>
+      <div class="hrow">
+        <div class="pos p2" style="width:84px;height:126px;border-radius:16px"><span class="rate" style="background:#FFD1DC;color:#5C3742">4,6</span></div>
+        <div class="pos p3" style="width:84px;height:126px;border-radius:16px"><span class="rate" style="background:#FFD1DC;color:#5C3742">4,2</span></div>
+        <div class="pos p4" style="width:84px;height:126px;border-radius:16px"><span class="rate" style="background:#FFD1DC;color:#5C3742">4,4</span></div></div>
+      <div class="shelf-h" style="font-weight:600">Gêneros</div>
+      <div style="display:flex;gap:8px;padding:0 14px;flex-wrap:wrap">
+        <span style="padding:8px 14px;border-radius:12px;background:#2a2c30;font-size:12px">Drama</span><span style="padding:8px 14px;border-radius:12px;background:#2a2c30;font-size:12px">Comédia</span><span style="padding:8px 14px;border-radius:12px;background:#2a2c30;font-size:12px">Terror</span></div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>A · M3 Expressive</h4>
+    <p>A Material 3 search bar with the avatar inside it, larger corner radii (16–24), and the rating badge as a filled pink pill. Same order as iOS A.</p>
+  </div>
+</div>
+
+<!-- ================= 3. PERFIL ================= -->
+<h3 class="sec-t">3 · Perfil (<code>ProfileTab</code>)</h3>
+<p class="note">Today: a 112 px banner, an avatar with an accent ring, three icon buttons plus an outlined "Editar perfil" button, a sideways-scrolling row of <b>nine</b> counters, the Assistindo agora card, a row of game chips, and six tabs on an opaque bar.</p>
+<div class="row-of-phones">
+  <div class="pick" data-choice="profile-ios" onclick="toggleSelect(this)">
+    <div class="phone" style="background:linear-gradient(180deg,#5c3742 0%,#2c1d22 34%,#121316 60%)">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:2px 14px"><div class="glass gbtn" style="width:36px;height:36px;font-size:13px">⇪</div><div class="glass gbtn" style="width:36px;height:36px;font-size:15px">⚙</div></div>
+      <div style="text-align:center;margin-top:2px">
+        <div style="width:84px;height:84px;margin:0 auto;border-radius:50%;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #FFD1DC,0 10px 26px rgba(0,0,0,.4)"></div>
+        <div style="font-size:21px;font-weight:800;margin-top:10px">Edson Toma</div>
+        <div class="sub" style="font-size:12.5px">@edyuto · cinéfilo de fim de semana</div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:26px;margin-top:14px;text-align:center">
+        <div><div style="font-size:17px;font-weight:800">1.284</div><div class="sub" style="font-size:10.5px">Assistidos</div></div>
+        <div><div style="font-size:17px;font-weight:800">312</div><div class="sub" style="font-size:10.5px">Seguidores</div></div>
+        <div><div style="font-size:17px;font-weight:800">198</div><div class="sub" style="font-size:10.5px">Seguindo</div></div>
+        <div><div style="font-size:17px;font-weight:800">›</div><div class="sub" style="font-size:10.5px">Mais</div></div>
+      </div>
+      <div style="display:flex;gap:8px;padding:14px 18px 0"><div class="glass gbtn" style="flex:1;height:38px;font-size:13px;font-weight:600">Editar perfil</div></div>
+      <div style="display:flex;gap:8px;padding:12px 18px 0;overflow:hidden">
+        <div class="glass gbtn" style="height:32px;padding:0 12px;font-size:11.5px;white-space:nowrap">🐮 Mimosa</div><div class="glass gbtn" style="height:32px;padding:0 12px;font-size:11.5px">Missões</div><div class="glass gbtn" style="height:32px;padding:0 12px;font-size:11.5px">Caderninho</div><div class="glass gbtn" style="height:32px;padding:0 12px;font-size:11.5px;white-space:nowrap">Jogo do Pôster</div></div>
+      <div style="display:flex;gap:16px;padding:16px 18px 0;font-size:13.5px;font-weight:700;white-space:nowrap"><span style="border-bottom:2px solid #FFD1DC;padding-bottom:5px">Destaques</span><span class="sub">Estantes</span><span class="sub">Registros</span><span class="sub">Locadoras</span></div>
+      <div style="padding:12px 18px 0;font-size:13px;font-weight:700">Top 4</div>
+      <div style="display:flex;gap:8px;padding:6px 18px 0"><div class="pos p5" style="width:60px;height:90px"></div><div class="pos p2" style="width:60px;height:90px"></div><div class="pos p3" style="width:60px;height:90px"></div><div class="pos p6" style="width:60px;height:90px"></div></div>
+      <div class="glass tabbar"><div class="tab on"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span>Accent-tinted, centred header</h4>
+    <p>Your profile accent colour plays the role the poster plays on movie detail and tints the whole top of the screen. The nine counters become <b>three plus a "Mais"</b> link to the rest. The game chips become glass capsules. The six tabs become a plain underline row with no opaque bar, so the scroll edge effect shows through.</p>
+  </div>
+
+  <div class="pick" data-choice="profile-ios-light" onclick="toggleSelect(this)">
+    <div class="phone light" style="background:linear-gradient(180deg,#ffd9e2 0%,#fdeef2 34%,#FDFBFF 60%)">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:2px 14px"><div class="glass gbtn" style="width:36px;height:36px;font-size:13px">⇪</div><div class="glass gbtn" style="width:36px;height:36px;font-size:15px">⚙</div></div>
+      <div style="text-align:center;margin-top:2px">
+        <div style="width:84px;height:84px;margin:0 auto;border-radius:50%;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #fff,0 10px 26px rgba(0,0,0,.15)"></div>
+        <div style="font-size:21px;font-weight:800;margin-top:10px">Edson Toma</div>
+        <div class="sub" style="font-size:12.5px">@edyuto · cinéfilo de fim de semana</div></div>
+      <div style="display:flex;justify-content:center;gap:26px;margin-top:14px;text-align:center">
+        <div><div style="font-size:17px;font-weight:800">1.284</div><div class="sub" style="font-size:10.5px">Assistidos</div></div><div><div style="font-size:17px;font-weight:800">312</div><div class="sub" style="font-size:10.5px">Seguidores</div></div><div><div style="font-size:17px;font-weight:800">198</div><div class="sub" style="font-size:10.5px">Seguindo</div></div><div><div style="font-size:17px;font-weight:800">›</div><div class="sub" style="font-size:10.5px">Mais</div></div></div>
+      <div style="padding:14px 18px 0"><div class="glass gbtn" style="height:38px;font-size:13px;font-weight:600">Editar perfil</div></div>
+      <div style="display:flex;gap:16px;padding:18px 18px 0;font-size:13.5px;font-weight:700"><span style="border-bottom:2px solid #9b4a60;padding-bottom:5px">Destaques</span><span class="sub">Estantes</span><span class="sub">Registros</span></div>
+      <div style="display:flex;gap:8px;padding:16px 18px 0"><div class="pos p5" style="width:60px;height:90px"></div><div class="pos p2" style="width:60px;height:90px"></div><div class="pos p3" style="width:60px;height:90px"></div><div class="pos p6" style="width:60px;height:90px"></div></div>
+      <div class="glass tabbar"><div class="tab on"><b>◉</b>Perfil</div><div class="tab"><b>≋</b>Social</div><div class="tab"><b>▦</b>Programação</div><div class="tab"><b>▶</b>Catálogo</div><div class="tab"><b>▤</b>Notícias</div></div>
+    </div>
+    <h4><span class="tag ios">iOS</span><span class="tag now">LIGHT</span>The same in light mode</h4>
+    <p>Abbay is dark-only, but Muuvie follows the system setting. Glass in light mode is frosted white, and pink works as a tint but not as text on white, so text uses a deeper rose. <b>Pick this if light mode must stay.</b></p>
+  </div>
+
+  <div class="pick" data-choice="profile-android" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4d2f38 0%,#271b1f 34%,#121316 60%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:4px 12px"><div class="tonal" style="width:40px;height:40px;color:#fff;background:rgba(255,255,255,.12);font-size:13px">⇪</div><div class="tonal" style="width:40px;height:40px;color:#fff;background:rgba(255,255,255,.12);font-size:15px">⚙</div></div>
+      <div style="text-align:center">
+        <div style="width:88px;height:88px;margin:0 auto;border-radius:32px;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #FFD1DC"></div>
+        <div style="font-size:22px;font-weight:700;margin-top:10px">Edson Toma</div><div class="sub" style="font-size:12.5px">@edyuto · cinéfilo de fim de semana</div></div>
+      <div style="display:flex;gap:6px;padding:14px 14px 0">
+        <div class="m3card" style="flex:1;padding:10px 0;text-align:center;border-radius:20px"><div style="font-size:17px;font-weight:700">1.284</div><div class="sub" style="font-size:10.5px">Assistidos</div></div>
+        <div class="m3card" style="flex:1;padding:10px 0;text-align:center;border-radius:20px"><div style="font-size:17px;font-weight:700">312</div><div class="sub" style="font-size:10.5px">Seguidores</div></div>
+        <div class="m3card" style="flex:1;padding:10px 0;text-align:center;border-radius:20px"><div style="font-size:17px;font-weight:700">198</div><div class="sub" style="font-size:10.5px">Seguindo</div></div></div>
+      <div class="m3fill" style="margin:10px 14px 0;height:44px;font-size:13.5px;border-radius:16px">Editar perfil</div>
+      <div style="display:flex;gap:8px;padding:12px 14px 0;overflow:hidden"><span style="padding:7px 12px;border-radius:10px;background:#2a2c30;font-size:11.5px;white-space:nowrap">🐮 Mimosa</span><span style="padding:7px 12px;border-radius:10px;background:#2a2c30;font-size:11.5px">Missões</span><span style="padding:7px 12px;border-radius:10px;background:#2a2c30;font-size:11.5px">Caderninho</span></div>
+      <div style="display:flex;gap:18px;padding:16px 16px 0;font-size:13.5px;font-weight:600;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.08)"><span style="color:#FFD1DC;border-bottom:3px solid #FFD1DC;padding-bottom:7px">Destaques</span><span class="sub">Estantes</span><span class="sub">Registros</span><span class="sub">Locadoras</span></div>
+      <div style="display:flex;gap:8px;padding:12px 14px 0"><div class="pos p5" style="width:60px;height:90px;border-radius:14px"></div><div class="pos p2" style="width:60px;height:90px;border-radius:14px"></div><div class="pos p3" style="width:60px;height:90px;border-radius:14px"></div><div class="pos p6" style="width:60px;height:90px;border-radius:14px"></div></div>
+      <div class="navbar"><div class="nav on"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>M3 Expressive</h4>
+    <p>The same structure. The avatar takes an Expressive shape (a rounded square, or one of the "cookie" shapes), the counters become tonal cards, and the edit button is filled.</p>
+  </div>
+</div>
+
+<!-- ================= 4. HOW ================= -->
+<h3 class="sec-t">4 · What carries across every screen (the Abbay "G6" equivalent)</h3>
+<ul class="bul">
+  <li><b>One <code>MuuviePoster</code> widget</b> replaces the poster drawing on every screen: one 2:3 shape, corner radius by size (10 iOS / 14–16 Android), a 0.5 px inner stroke, an optional shadow, and a placeholder tile for missing art.</li>
+  <li><b>One glass helper file</b> (for example <code>muuvie_glass.dart</code>) is the only place that branches on platform. iOS gets glass, Android gets M3 tonal surfaces, and screens never check <code>Platform.isIOS</code> themselves. The existing <code>MuuvieButton</code> and <code>platform_helper</code> already lean this way.</li>
+  <li><b>Poster tint:</b> <code>ColorScheme.fromImageProvider</code> (built into Flutter) on movie detail; the user's accent colour on Perfil, shelves and maratonas.</li>
+  <li><b>Subtraction:</b> remove the opaque <code>surfaceContainerLow</code> panels, the two copied <code>_TabBarDelegate</code>s, the hard-coded black in the trailer button and on the news article, and the three competing card styles.</li>
+  <li><b>The glass itself, in Flutter:</b> Flutter has no native Liquid Glass. There are two routes:
+    <ul>
+      <li>(a) <code>BackdropFilter</code> blur with a highlight stroke, as drawn here. It works everywhere but costs GPU and only looks <i>like</i> glass.</li>
+      <li>(b) A shader package such as <code>liquid_glass_renderer</code>, or native UIKit views for the tab bar via platform views. Closer to the real thing, but less mature.</li>
+    </ul>
+    This is the main technical question for the design doc. Right now my leaning is (a), with the tab bar as the one candidate for (b).</li>
+</ul>
+<p class="note" style="margin-top:18px">Not drawn yet: Social feed, Programação, Notícias, the actions sheet, and the rating screen. They'd follow whichever directions you pick here.</p>
+
+</head><body>
+<style>
+.ibtn{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;flex:1}
+.ibtn b{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:400;background:#2a2c30}
+.ibtn.on b{background:#FFD1DC;color:#5C3742;border-radius:28px}
+.ibtn.on{color:#FFD1DC;font-weight:600}
+.assist{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid #44474A;font-size:12px;white-space:nowrap}
+.assist i{font-style:normal;color:#FFD1DC}
+.tile{background:#1E2022;border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:600}
+.tile i{font-style:normal;width:36px;height:36px;border-radius:12px;background:#6E4350;color:#FFD1DC;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ftb{position:absolute;left:50%;transform:translateX(-50%);bottom:86px;display:flex;align-items:center;gap:10px;z-index:8}
+.ftb .bar{height:60px;border-radius:30px;background:#2a2c30;display:flex;align-items:center;gap:4px;padding:0 8px;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.ftb .bar span{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.ftb .bar span.on{background:#6E4350;color:#FFD1DC}
+.ftb .fab{width:60px;height:60px;border-radius:20px;background:#FFD1DC;color:#5C3742;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.stars{display:flex;gap:6px;font-size:24px;color:#FFD1DC}
+.stars span.off{color:#44474A}
+</style>
+
+<hr style="border:0;border-top:1px solid #2a2c30;margin:44px 0 28px"><h2>Round 2 · Android alternatives for the watch actions and the Perfil shortcuts</h2>
+<p class="subtitle">The first pass used a connected button group (the selected button morphs into a pill while its neighbours stay half-square) and square-cornered chips next to round buttons. Below are more conventional Material 3 options, next to the first pass for comparison. iOS is unchanged. Click the ones you prefer.</p>
+
+<h3 class="sec-t">5 · Android movie detail: the watch actions</h3>
+<div class="row-of-phones">
+
+  <!-- A1 reference -->
+  <div class="pick" data-choice="and-actions-group" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4a2c24 0%,#2f1f1b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div class="pos p1" style="width:120px;height:180px;margin:40px auto 0;border-radius:20px"></div>
+      <div style="text-align:center;padding:14px 22px 0"><div style="font-size:22px;font-weight:700">Ainda Estou Aqui</div><div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama</div></div>
+      <div class="btngroup" style="padding:18px 16px 0"><div class="on">✓<span>Já assisti</span></div><div>★<span>Avaliar</span></div><div>◷<span>Assistindo</span></div><div>⋯<span>Ações</span></div></div>
+      <div class="m3fill" style="margin:10px 16px 0;height:52px;font-size:15px;border-radius:18px">＋  Registrar sessão</div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>1 · First pass: connected button group</h4>
+    <p>For reference. These are four actions of different kinds (a toggle, a dialog, a state and a menu) forced into one control that looks like a segmented choice, which is probably why it feels off.</p>
+  </div>
+
+  <!-- A2 icon buttons -->
+  <div class="pick" data-choice="and-actions-icons" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4a2c24 0%,#2f1f1b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div class="pos p1" style="width:120px;height:180px;margin:40px auto 0;border-radius:20px"></div>
+      <div style="text-align:center;padding:14px 22px 0"><div style="font-size:22px;font-weight:700">Ainda Estou Aqui</div><div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama</div></div>
+      <div style="display:flex;padding:18px 14px 0">
+        <div class="ibtn on"><b>✓</b>Já assisti</div><div class="ibtn"><b>★</b>Avaliar</div><div class="ibtn"><b>◷</b>Assistindo</div><div class="ibtn"><b>⋯</b>Ações</div></div>
+      <div class="m3fill" style="margin:14px 16px 0;height:52px;font-size:15px;border-radius:18px">＋  Registrar sessão</div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>2 · Separate icon buttons with labels</h4>
+    <p>Four separate tonal icon buttons with a label under each, the way Google Play and Photos lay out actions. This is a cleaner version of today's round tiles. "On" states fill pink and turn round; the rest stay rounded squares.</p>
+  </div>
+
+  <!-- A3 stars inline -->
+  <div class="pick" data-choice="and-actions-stars" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4a2c24 0%,#2f1f1b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div class="pos p1" style="width:120px;height:180px;margin:40px auto 0;border-radius:20px"></div>
+      <div style="text-align:center;padding:14px 22px 0"><div style="font-size:22px;font-weight:700">Ainda Estou Aqui</div><div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama</div></div>
+      <div class="m3card" style="margin:16px 16px 0;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="sub" style="font-size:11px">Sua avaliação</div><div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span class="off">★</span></div></div>
+          <div style="height:36px;padding:0 14px;border-radius:18px;border:1px solid #44474A;display:flex;align-items:center;font-size:12.5px;gap:6px;color:#FFD1DC">✓ Já assisti</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin:10px 16px 0">
+        <div class="m3fill" style="flex:1;height:52px;font-size:15px;border-radius:18px">＋  Registrar sessão</div>
+        <div style="width:52px;height:52px;border-radius:18px;background:#2a2c30;display:flex;align-items:center;justify-content:center;font-size:18px">⋮</div></div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>3 · Stars inline, the rest in a menu</h4>
+    <p>Tap the stars right on the page instead of opening <code>RateMovieRoute</code>. "Já assisti" is a single outlined toggle. "Assistindo agora", Histórico and the actions-sheet items move behind ⋮. There are fewer buttons, but rating behaves differently (today it opens a screen with more fields).</p>
+  </div>
+
+  <!-- A4 floating toolbar -->
+  <div class="pick" data-choice="and-actions-toolbar" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4a2c24 0%,#2f1f1b 38%,#121316 72%)">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div class="pos p1" style="width:120px;height:180px;margin:40px auto 0;border-radius:20px"></div>
+      <div style="text-align:center;padding:14px 22px 0"><div style="font-size:22px;font-weight:700">Ainda Estou Aqui</div><div class="sub" style="font-size:12.5px;margin-top:3px">2024 · 137 min · Drama</div></div>
+      <div style="display:flex;margin:16px 0 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:600">
+        <div style="flex:1;text-align:center;padding:9px 0;color:#FFD1DC;border-bottom:3px solid #FFD1DC">Sobre</div><div class="sub" style="flex:1;text-align:center;padding:9px 0">Comunidade</div><div class="sub" style="flex:1;text-align:center;padding:9px 0">Atividade</div></div>
+      <div class="sub" style="padding:10px 18px 0;font-size:12.5px;line-height:1.45">Rio, 1971. Eunice Paiva vê a família ser despedaçada quando o marido é levado pela ditadura…</div>
+      <div class="ftb"><div class="bar"><span class="on">✓</span><span>★</span><span>◷</span><span>⋮</span></div><div class="fab">＋</div></div>
+      <div class="navbar"><div class="nav"><b>◉</b>Perfil</div><div class="nav"><b>≋</b>Social</div><div class="nav"><b>▦</b>Programação</div><div class="nav on"><b>▶</b>Catálogo</div><div class="nav"><b>▤</b>Notícias</div></div><div class="gesture"></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>4 · Floating toolbar and a FAB</h4>
+    <p>Material 3 Expressive's floating toolbar with a FAB for "Registrar sessão", pinned above the nav bar. This is the Android twin of iOS option B, so the actions stay reachable while you scroll. The icons have no labels, so the first use needs tooltips.</p>
+  </div>
+</div>
+
+<h3 class="sec-t">6 · Android Perfil: the game shortcuts (pet, Missões, Caderninho, Jogo do Pôster)</h3>
+<div class="row-of-phones">
+  <div class="pick" data-choice="and-short-chips" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4d2f38 0%,#271b1f 34%,#121316 60%);height:420px">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="text-align:center;margin-top:16px"><div style="width:72px;height:72px;margin:0 auto;border-radius:26px;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #FFD1DC"></div><div style="font-size:20px;font-weight:700;margin-top:8px">Edson Toma</div></div>
+      <div class="m3fill" style="margin:14px 14px 0;height:44px;font-size:13.5px;border-radius:16px">Editar perfil</div>
+      <div style="display:flex;gap:8px;padding:14px 14px 0;overflow:hidden">
+        <span class="assist"><i>🐮</i>Mimosa</span><span class="assist"><i>◎</i>Missões</span><span class="assist"><i>✎</i>Caderninho</span><span class="assist"><i>▣</i>Pôster</span></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>1 · Standard assist chips</h4>
+    <p>Plain Material 3 assist chips: an outline, 8 px corners and a leading icon. They look native and stay quiet, like today but in the official style.</p>
+  </div>
+
+  <div class="pick" data-choice="and-short-tiles" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4d2f38 0%,#271b1f 34%,#121316 60%);height:420px">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="text-align:center;margin-top:16px"><div style="width:72px;height:72px;margin:0 auto;border-radius:26px;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #FFD1DC"></div><div style="font-size:20px;font-weight:700;margin-top:8px">Edson Toma</div></div>
+      <div class="m3fill" style="margin:14px 14px 0;height:44px;font-size:13.5px;border-radius:16px">Editar perfil</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 14px 0">
+        <div class="tile"><i>🐮</i>Mimosa<span class="sub" style="font-weight:400;font-size:10.5px;margin-top:-6px">Nível 3 · com fome</span></div>
+        <div class="tile"><i>◎</i>Missões<span class="sub" style="font-weight:400;font-size:10.5px;margin-top:-6px">2 de 5 hoje</span></div>
+        <div class="tile"><i>✎</i>Caderninho</div><div class="tile"><i>▣</i>Jogo do Pôster</div></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>2 · A 2×2 grid of tiles</h4>
+    <p>The shortcuts become tonal tiles with room for a status line ("2 de 5 hoje"). This gives the gamification more weight on the profile, but pushes the tabs further down.</p>
+  </div>
+
+  <div class="pick" data-choice="and-short-icons" onclick="toggleSelect(this)">
+    <div class="phone android" style="background:linear-gradient(180deg,#4d2f38 0%,#271b1f 34%,#121316 60%);height:420px">
+      <div class="status"><span>9:41</span><span>▾ ▮</span></div>
+      <div style="text-align:center;margin-top:16px"><div style="width:72px;height:72px;margin:0 auto;border-radius:26px;background:linear-gradient(135deg,#f6c2cf,#a4677a);box-shadow:0 0 0 3px #FFD1DC"></div><div style="font-size:20px;font-weight:700;margin-top:8px">Edson Toma</div></div>
+      <div class="m3fill" style="margin:14px 14px 0;height:44px;font-size:13.5px;border-radius:16px">Editar perfil</div>
+      <div style="display:flex;padding:16px 10px 0">
+        <div class="ibtn"><b>🐮</b>Mimosa</div><div class="ibtn"><b>◎</b>Missões</div><div class="ibtn"><b>✎</b>Caderninho</div><div class="ibtn"><b>▣</b>Pôster</div></div>
+    </div>
+    <h4><span class="tag and">ANDROID</span>3 · Labelled icon buttons</h4>
+    <p>The same component as movie-detail option 2, so the app reuses one action shape everywhere.</p>
+  </div>
+</div>
+
+
+</body></html>

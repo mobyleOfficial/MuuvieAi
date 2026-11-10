@@ -47,3 +47,6 @@ Thumbs.db
 
 # Pipeline runtime state (seeded from .claude/task/pipeline-queue.template.json)
 .claude/task/pipeline-queue.json
+
+# Brainstorm companion sessions (mockup server output)
+.superpowers/
