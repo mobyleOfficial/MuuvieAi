@@ -21,10 +21,10 @@ After bootstrap, set `LINEAR_ACCESS_TOKEN` in `.claude/settings.local.json` (git
 
 - **[muuvie/](muuvie)** — Flutter frontend (Android, iOS, Web)
 - **[backend/](backend)** — Kotlin/Ktor API server
-- **[research/](research)** — Design docs, API specs, architecture decisions
+- **[research/](research)** — Design docs, API specs, architecture decisions; one folder per feature under `research/features/<slug>/` (e.g. [movie-universe](research/features/movie-universe/roadmap.md))
 - **[plugins/](plugins)** — Claude Code MCP servers (e.g. `repo-management`)
 - **[rules/](rules)** — Ecosystem policies (NO_COAUTHORS, AI_AGNOSTIC_SUBMODULES, DOCS_UP_TO_DATE, etc.) + lint rules
-- **[.claude/skills/](.claude/skills)** — Project-level Claude Code skills (auto-discovered)
+- **[.claude/skills/](.claude/skills)** — Project-level Claude Code skills (auto-discovered), incl. the [feature map](.claude/skills/muuvie-feature-map/features/README.md): one page per user-facing feature, linking the app to the backend
 - **[.claude/hooks/](.claude/hooks)** — Pre/Post/Session hooks that enforce rules
 - **[.claude/CLAUDE.md](.claude/CLAUDE.md)** — Claude/tooling-specific behavior (companion to root `CLAUDE.md`)
 - **[.claude/agents/](.claude/agents)** — Pipeline agents (`pm-spec`, `architect-review`, `implementer-tester`, `validator`, `reviewer`)

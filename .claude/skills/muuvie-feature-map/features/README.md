@@ -93,6 +93,7 @@ Reachable only indirectly, by construction:
 
 - [catalog-search](catalog-search.md): search, browse by release date and category, rankings, discover lists.
 - [movie-detail](movie-detail.md): a movie's page, its community and timeline, people.
+- [movie-universe](movie-universe.md): the map of similar movies opened from a movie's page, travel between systems, filters, constellations.
 - [watch-logs](watch-logs.md): logging a session, rating, history, comments.
 - [shelves](shelves.md): shelves, adding movies, saved shelves.
 - [locadoras](locadoras.md): locadoras (user video stores) and their shelves.
