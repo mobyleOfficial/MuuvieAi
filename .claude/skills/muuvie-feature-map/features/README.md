@@ -51,7 +51,7 @@ set -a; . ./.env; set +a      # ./gradlew run does not read .env
 
 Required: `TMDB_API_KEY`, `DATABASE_URL`, `JWT_SECRET` (the server refuses to start without it). Optional: `TENOR_API_KEY` (else `GET /gifs/search` answers 503), `FCM_SERVICE_ACCOUNT` / `FCM_SERVICE_ACCOUNT_FILE` (push), `OAUTH_*`, `METRICS_TOKEN`, `CORS_ORIGINS` (Flutter web on a port other than 5173).
 
-Most endpoints need a token. Sign up or log in through `AuthRouting` (see [auth](auth.md)) and pass `-H "Authorization: Bearer $TOKEN"`.
+Most endpoints need a token. Sign in through `AuthRouting` (see [auth](auth.md); it needs an Apple or Google ID token) and pass `-H "Authorization: Bearer $TOKEN"`.
 
 **App** (`muuvie/`): `secrets/.env` from `secrets/.env.example` with `DEV_BACKEND_URL` (`http://localhost:8080` on the iOS simulator, `http://10.0.2.2:8080` on the Android emulator), then
 
@@ -80,7 +80,7 @@ Reachable only indirectly, by construction:
 ### Shell and account
 
 - [app-shell](app-shell.md): launch, the five tabs, deep links, WebSocket and push events and where each lands, device registration.
-- [auth](auth.md): log in, sign up, nickname check, session and token refresh, OAuth.
+- [auth](auth.md): sign in with Apple or Google, choosing the nickname, session and token refresh, logout.
 - [onboarding](onboarding.md): the intro shown once per install (not tied to an account), replayable from Configurações.
 - [settings](settings.md): Configurações — notification switches, push permission, intro replay, logout (no delete-account or change-password).
 
