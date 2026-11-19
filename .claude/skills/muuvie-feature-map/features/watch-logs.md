@@ -1,6 +1,6 @@
 # Watch logs
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 What a logged-in user records about a movie:
 - **sessions:** full or partial, with venue, emotions, GIF, comment and visibility;
@@ -91,5 +91,5 @@ App: `LogSessionRoute(movieId: …, movieTitle: …)` and `RateMovieRoute(movieI
 - **Other users' history is unused:** `GET /movies/{id}/logs?userId=<other>` exists, but `MovieHistoryRoute` is only pushed without `userId` (the viewer's own history).
 - **Dead TMDB-id path:** `LogSessionRoute` accepts a `tmdbId` (→ `POST /movies/tmdb/{tmdbId}/logs`), but every caller passes `movieId`.
 - **GIF search needs a key:** without `TENOR_API_KEY`, `GET /gifs/search` answers 503 `gif_search_unavailable` and the picker shows the unavailable message. Recent GIFs still load.
-- **Comments are unreachable:** `ThreadCommentsSheet` is exported from `muuvie/ui/watch_logs/lib/watch_logs_ui.dart` but never shown. Drive comments with curl: `GET /comments?targetType=watch_log&targetId=$LOG`. Targets are `watch_log` or `rating` (else 400); a `parentId` must belong to the same target.
+- **Comments:** `ThreadCommentsSheet` opens from the speech-bubble button of feed cards that carry a session (`muuvie/ui/social/lib/feed/activity_card.dart`, after `AuthGate`); rating comments still have no entry point. Drive comments with curl: `GET /comments?targetType=watch_log&targetId=$LOG`. Targets are `watch_log` or `rating` (else 400); a `parentId` must belong to the same target.
 - **Emotion wire names:** they are the snake_case values in `muuvie/core/lib/vocabulary/emotion.dart` (`tension`, `freak_out`, …). An unknown name answers 400.

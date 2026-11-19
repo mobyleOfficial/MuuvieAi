@@ -1,6 +1,6 @@
 # Public profile
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 Another user's profile. `PublicProfileRoute` takes a user id or an `@handle`, and its screen is the same `MemberProfileView` as the own [profile](profile.md): the same header, shortcuts and six tabs, with `userId` set to the profile's id. This page covers what differs for a visitor and how a visitor gets there.
 
@@ -62,5 +62,6 @@ In the app, push `PublicProfileRoute(userId: '@cinefila')` or a user id. The `ht
 ## Gotchas
 - Visibility: the counters, highlights, Registros and charts are all filtered through `VisibilityPolicy` by the viewer's relation to the owner. The same profile shows different numbers to the owner, a follower and a logged-out viewer.
 - The `@handle` is resolved only in the first request. After that, every tab and action uses `profile.id`.
+- The header has a ⋮ with "Denunciar perfil" and "Bloquear"/"Desbloquear" ([moderation](moderation.md)); a profile that blocked the viewer is a 404, one the viewer blocked says `blocked: true`.
 - `GET /users/{userId}` does not need a token, but following, the lists and whispering do. The profile header still shows Seguir to a logged-out viewer.
 - A handle that is not found and a raw id that is not found both return 404 `not_found` (`ProfileAccess.resolveUserId`).

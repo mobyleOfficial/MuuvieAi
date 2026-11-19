@@ -1,6 +1,6 @@
 # Shelves
 
-> Mapped at backend@010aa02 muuvie@05bd8fe · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 Estantes: named, colored lists of movies with a visibility. Every user has two system shelves, "Já assisti" and "Quero ver" (`l10n:systemShelfWatched`, `l10n:systemShelfWatchlist`), created on first read, plus their own. Covers the Estantes tab of a profile (own: editable; others': read-only), a shelf's detail, adding movies to shelves, saving other people's shelves ("Salvas") and the public "Estantes com este filme" list. Grouping shelves into locadoras is in [locadoras](locadoras.md).
 
@@ -78,6 +78,6 @@ App: push `ShelfDetailRoute(shelfId: S, shelfName: 'Noir')`, `SavedShelvesRoute(
 - A shelf the viewer cannot see is a 404, not a 403. Changing someone else's shelf is a 403 `not_shelf_owner`. Renaming a system shelf is a 403 `system_shelf_rename`; the form never sends a new name.
 - Saving your own shelf or a system shelf is a 400. Saving twice keeps one.
 - The move/copy picker loads only the first page (20) of my shelves; the tab, `AddToShelvesRoute` and the locadora picker load up to 10 pages.
-- `AddMoviesToShelfRoute` labels are hardcoded English ("Search movies...", "Done (n)"), not l10n.
+- `AddMoviesToShelfRoute` labels: "Buscar filmes…" and "Concluir (n)" (`l10n:addMoviesSearchHint`, `l10n:addMoviesDone`).
 - The app never sends the `rating` filter, and its sort sheet does not show the current `applyOnce` state (the server stores `manual` after an apply-once).
 - Creating a custom shelf publishes a `nova_estante` activity with the shelf's visibility ([social-feed](social-feed.md)); editing rewrites it (visibility included) and deleting removes it.

@@ -1,6 +1,6 @@
 # App shell
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 What every session shares: launch, the bottom bar with five tabs, the login gate on tabs, deep links, the WebSocket that keeps screens live, and push registration and taps. Lives in `muuvie/lib/routes`, `muuvie/lib/push`, `muuvie/lib/firebase` and `muuvie/core/lib/websocket`; backend side is `WebSocketRouting.kt`, the device endpoints and `SocialNotifierImpl`.
 
@@ -8,7 +8,7 @@ What every session shares: launch, the bottom bar with five tabs, the login gate
 - **tabs:** Perfil (`l10n:profile`) · Social (`l10n:navAtts`, the code calls it Atts) · Programação (`l10n:navProgramacao`) · Catálogo (`l10n:navCatalogo`) · Notícias (`l10n:navNoticias`), in that order. Perfil, Social and Catálogo need an account: tapping one logged out opens login (`AuthGate.check`) and the tab only switches if login succeeds. Catálogo hides the shell app bar.
 - **launch-tab:** logged in opens Perfil (index 0); logged out opens Programação (index 2). When the session ends (logout, or a refresh token the server rejects) on a gated tab, the shell jumps to Programação.
 - **social-app-bar:** Social's root has two actions: Seguindo e seguidores (`l10n:attsFollowsAction`, opens `FollowsRoute`) and Sussurros (`l10n:attsWhispers`) with a badge of conversations with unread messages (`l10n:attsWhispersUnread`). Badge = `GET /users/me/unread-count` once, then the `unread` WebSocket event, and reloaded on return from Sussurros.
-- **import-banner:** while the session profile says `isScraping` (an import is pending/reading/importing) a banner sits under the app bar: "Importing data..." / "Filmow", hardcoded English, not l10n. When an `import_progress` with status `done` arrives, a snackbar "Sua importação do Filmow terminou" (`l10n:importFinishedSnack`) with "Ver relatório" (`l10n:importSeeReport`) opens the job report.
+- **import-banner:** while the session profile says `isScraping` (an import is pending/reading/importing) a banner sits under the app bar: "Importando seu histórico…" / "Você pode continuar usando o app" (`l10n:importBannerTitle`, `l10n:importBannerHint`). When an `import_progress` with status `done` arrives, a snackbar "Sua importação do Filmow terminou" (`l10n:importFinishedSnack`) with "Ver relatório" (`l10n:importSeeReport`) opens the job report.
 - **first-run intro:** after the first frame the shell pushes the intro once per install (see [onboarding](onboarding.md)).
 - **app-bar titles:** pushed screens inside a tab put their own title and a back arrow in the shell app bar (`route_title_resolver.dart`).
 - **deep links:** `https://muuvie.app/@handle` → public profile, `/m/<slug>` → maratona, `/c/<slug>` → CineClube, each pushed over `MainRoute` so back returns to the app (`profileDeepLink`). Anything else takes the default path.
@@ -67,9 +67,8 @@ adb shell am start -a android.intent.action.VIEW -d "muuvie://muuvie.app/@handle
 ```
 
 ## Gotchas
-- The session profile (`GET /profile`) is fetched once, when its repository is built at launch, and again only after an import finishes. Logging in mid-session therefore does not register push until the next launch (unless Configurações › Permitir is tapped). Tags for crashes and analytics wait for it too.
-- Logging out does not close the WebSocket: it keeps delivering the previous user's events until it drops and the reconnect fails.
-- Logged out, the WebSocket retries `POST /ws/token` (401) every 5 s for the whole session.
+- The session profile (`GET /profile`) is fetched at launch, after each sign-in (`ObserveSessionStarted` in `muuvie/lib/app_initializer.dart`) and after an import finishes; push registration and the crash/analytics tags wait for it.
+- Logging out disconnects the WebSocket and a sign-in reconnects it. Without a session, a 401 on `POST /ws/token` stops the retries until the next sign-in.
 - `new_follower` and `activity_loved` are parsed by `WsMessageType` but nothing listens; maratona, CineClube and `import_updated` are not even parsed. Those events reach the user only as push. The client never sends anything; the server just logs incoming frames.
 - The client uses `IOWebSocketChannel` with a header, which does not work on Flutter web.
 - Push payload `data` is the event's string map plus `type`; push texts are pt/en/es by the device locale saved at registration (`PushTexts`).
