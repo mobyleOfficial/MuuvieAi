@@ -1,6 +1,6 @@
 # Catalog search and browse
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 The Catálogo tab (`SearchTab`): a search field over a discovery hub.
 - With nothing typed, the hub shows genre chips and rows of movies, shelves, locadoras and cinéfilos, each with "Ver tudo".
@@ -85,6 +85,5 @@ App: the Catálogo tab opens on `SearchRoute`. To reach a filtered grid directly
 - `GET /movies/search` answers 400 on a blank `query`; the 3-letter minimum keeps the app from sending one. `GET /movies/discover` does not validate anything: its filters go straight to TMDB. `vote_count_gte` is supported but no screen sets it.
 - The `/discover/*` endpoints check `page ≥ 1` and `limit` 1..50 (400 `invalid_pagination`). Trending takes `days` 1..30 (default 7); the app never sends it.
 - The two Muuvie rankings come from Muuvie data, so on a fresh database both rows are hidden. To fill them, log a session within 7 days (trending) and have two users rate the same movie (loved).
-- Some screens are not localized. The decade and year screens hard-code "Upcoming", "Any" and "1990s" in English, and Explorar's error message reads "Failed to load categories".
-- The tile reads "Mais aguardados" but its screen is titled "Mais Esperados": two different keys.
+- The decade and year screens read "Em breve", "Anos 1990" and "Qualquer ano" (`l10n:releaseDateUpcoming`, `l10n:releaseDateDecade`, `l10n:releaseDateAnyYear`); Explorar's error is `l10n:browseCategoriesError`.
 - `GET /shelves/search` is not called here. It searches the viewer's own shelves (`SearchMyShelves`), and no screen uses that (see [shelves](shelves.md)).

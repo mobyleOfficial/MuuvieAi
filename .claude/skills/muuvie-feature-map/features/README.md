@@ -82,7 +82,8 @@ Reachable only indirectly, by construction:
 - [app-shell](app-shell.md): launch, the five tabs, deep links, WebSocket and push events and where each lands, device registration.
 - [auth](auth.md): sign in with Apple or Google, choosing the nickname, session and token refresh, logout.
 - [onboarding](onboarding.md): the intro shown once per install (not tied to an account), replayable from Configurações.
-- [settings](settings.md): Configurações — notification switches, push permission, intro replay, logout (no delete-account or change-password).
+- [settings](settings.md): Configurações — notification switches, push permission, blocked accounts, legal links, intro replay, logout and account deletion.
+- [moderation](moderation.md): deleting the account, reporting accounts and activities, blocking accounts.
 
 ### Social (`SocialTab`, called Atts in code; `l10n:navAtts`)
 

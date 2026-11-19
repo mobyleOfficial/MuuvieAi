@@ -1,6 +1,6 @@
 # Movie detail
 
-> Mapped at backend@a5f16aa muuvie@e4bc089 · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 A movie's page (`MovieDetailRoute`), reachable from almost every tab. From the top:
 - the header (backdrop, trailer, poster, credits);
@@ -88,7 +88,7 @@ App: push `MovieDetailRoute(movieId: <catalog id>, movieTitle: '…')`. Opening 
 ## Gotchas
 - Inside a tab the shell draws the app bar (title and back arrow). Pushed over the shell, as from the [movie-universe](movie-universe.md) or a conversation, the detail draws its own (`TabIndexScope` check in `muuvie/ui/movies_ui/lib/movie_detail/movie_detail_screen.dart`).
 - `GET /movies` takes `id`, `tmdbId` or `filmowId`; the app only sends `id`. `GET /movies/{id}` looks the movie up by TMDB id despite the name, and the app never calls it.
-- `PersonDetailRoute` is registered under every tab and at the root, but nothing pushes it, and the cast cards are not tappable. So the person page and both `/persons` endpoints are unreachable from the UI.
+- Cast cards push `PersonDetailRoute`. The person page lists only the movies already in Muuvie's catalog.
 - `/events` returns maratonas and CineClubes, but "Na Programação" shows only the maratonas and is hidden when there are none. The CineClubes row comes from `/cineclubes` instead.
 - `GET /movies/{id}/timeline` takes `months` 1..24 (400 outside); the app always sends 12. The `/cineclubes` and `/maratonas` rows page with `limit=20`.
 - Comunidade only reloads after a rating or session saved from this page. Changes made elsewhere show after leaving and reopening the movie.

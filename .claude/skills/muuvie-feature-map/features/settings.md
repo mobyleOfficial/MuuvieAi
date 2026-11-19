@@ -1,8 +1,8 @@
 # Settings
 
-> Mapped at backend@010aa02 muuvie@05bd8fe · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
-Configurações: a full-screen modal from the own profile with shortcuts to edit the profile and import, the five push-notification switches, the device push-permission warning, the intro replay and logout. There is no delete-account or change-password action anywhere in the app. Lives in `muuvie/ui/profile/lib/settings`; backend side is the notification-prefs and device endpoints in `MessagesRouting.kt` plus `POST /auth/logout`.
+Configurações: a full-screen modal from the own profile with shortcuts to edit the profile and import, the five push-notification switches, the device push-permission warning, blocked accounts, the intro replay, the privacy policy, terms and support links, logout and account deletion (see [moderation](moderation.md)), and the TMDB attribution. There is no change-password action. Lives in `muuvie/ui/profile/lib/settings`; backend side is the notification-prefs and device endpoints in `MessagesRouting.kt` plus `POST /auth/logout`.
 
 ## Sub-features
 - **loading:** spinner until prefs are read. If `GET /users/me/notification-prefs` fails, the whole Notificações section is hidden; the rest still works.
@@ -14,10 +14,13 @@ Configurações: a full-screen modal from the own profile with shortcuts to edit
   - "Maratonas em que entrei" (`l10n:settingsNotifyMaratonas`) → `maratonas`
   - "Dia de debate dos meus CineClubes" (`l10n:settingsNotifyCineclubes`) → `cineclubes`
 
-  Each toggle is optimistic: it flips at once and `PUT /users/me/notification-prefs` sends all five. On failure it flips back with the snackbar "Não deu certo. Tente de novo." (`l10n:maratonaActionError`). Switches gate push only; WebSocket events still arrive (see [app-shell](app-shell.md)).
+  Each toggle is optimistic: it flips at once and `PUT /users/me/notification-prefs` sends all five. On failure it flips back with the snackbar "Não deu certo. Tente de novo." (`l10n:commonActionError`). Switches gate push only; WebSocket events still arrive (see [app-shell](app-shell.md)).
 - **push-blocked:** only when Firebase is on and the OS denies notifications: a red row "As notificações estão desligadas neste aparelho" (`l10n:settingsPushOff`) with hint `l10n:settingsPushOffHint` and "Permitir" (`l10n:settingsPushAllow`). Permitir asks the OS again; if allowed, `PUT /users/me/devices` registers this device right away and the row disappears.
 - **intro:** section "Muuvie" (`l10n:settingsAbout`) › "Ver a introdução de novo" (`l10n:settingsShowIntro`) resets the seen mark and opens `OnboardingRoute` (see [onboarding](onboarding.md)).
-- **logout:** "Sair" (`l10n:settingsLogout`, red) › dialog "Sair do Muuvie?" (`l10n:settingsLogoutTitle`), Sair / Manter (`l10n:maratonaKeep`). Confirm: `DELETE /users/me/devices?token=` and FCM token deletion, then `POST /auth/logout`, then local tokens cleared (all best effort; local logout always happens). Configurações closes and the shell moves from Perfil to Programação.
+- **blocked:** "Contas bloqueadas" (`l10n:settingsBlockedAccounts`) opens `BlockedAccountsRoute` ([moderation](moderation.md)).
+- **legal:** under Muuvie, "Política de privacidade", "Termos de uso" and "Fale com a gente" (`l10n:settingsPrivacyPolicy`, `l10n:settingsTerms`, `l10n:settingsSupport`) open `MuuvieLegalLinks` (mobyleapps.com/muuvie/…, mailto) outside the app. The list ends with the TMDB attribution (`l10n:settingsTmdbAttribution`).
+- **delete-account:** "Excluir conta" (`l10n:settingsDeleteAccount`, red); see [moderation](moderation.md).
+- **logout:** "Sair" (`l10n:settingsLogout`, red) › dialog "Sair do Muuvie?" (`l10n:settingsLogoutTitle`), Sair / Cancelar (`l10n:commonCancel`). Confirm: `DELETE /users/me/devices?token=` and FCM token deletion, then `POST /auth/logout`, then local tokens cleared (all best effort; local logout always happens). Configurações closes and the shell moves from Perfil to Programação.
 
 ## How to get to it (user POV)
 Perfil › gear icon (tooltip "Configurações", `l10n:settingsTitle`) at the right of the banner. Only on your own profile. Close with the X.
@@ -52,4 +55,4 @@ App: Perfil › gear.
 - `import_updated` pushes ignore every preference; system Sussurros are never pushed; `unread`, `watch_party` and the sender's own `message` are WebSocket only.
 - `RegisterDevice` rejects a platform outside android/ios/web or a token empty or over 500 chars (400); the locale is cut to 10 chars and picks the push language.
 - Without Firebase (dev builds without config, web) the push-blocked row never shows and logout skips the device call (no token).
-- The pref-save error and the logout cancel button reuse maratona strings (`maratonaActionError`, `maratonaKeep`).
+

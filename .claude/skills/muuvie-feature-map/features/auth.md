@@ -1,6 +1,6 @@
 # Auth
 
-> Mapped at backend@7b4270c muuvie@55b3e7b · source: code
+> Mapped at backend@f9dec9f muuvie@5bcd4b6 · source: code
 
 Sign in with Apple or Google only. There is no e-mail and password, sign-up form or password recovery. The first sign-in creates the account, which then picks its nickname. A session is kept alive by refresh tokens, and the user can log out. Everything lives in one modal flow (`AuthFlowRoute`) that any gated action opens; the backend side is all of `AuthRouting.kt`.
 
@@ -61,4 +61,6 @@ App: tap Perfil while logged out.
 - Access tokens last `JWT_EXPIRY_SECONDS` (default 86400, a day); refresh tokens `REFRESH_TOKEN_EXPIRY_DAYS` (default 30). Logout blocklists the access token until its expiry.
 - Reusing a rotated refresh token is treated as theft: every refresh token of that user is revoked (all devices log out at their next refresh). The interceptor is a `QueuedInterceptor` for this reason.
 - Nickname uniqueness is case-sensitive (`Ana` and `ana` can both exist). A nickname cannot have quotes, backslashes or control characters (400). The public `@handle` is a separate field, editable in Editar perfil (see [profile](profile.md)).
-- No delete-account yet; with Sign in with Apple it must also revoke the Apple token.
+- Deleting the account ([moderation](moderation.md)) revokes the Apple token when the server has the Apple key; the app re-asks Apple for an authorization code on iOS.
+- The login screen shows "Ao continuar, você concorda com os Termos de uso e a Política de privacidade." (`l10n:authLegalNotice`) with links to both.
+- A sign-in emits `ObserveSessionStarted`: `AppInitializer` reloads the session profile (which registers push) and reconnects the WebSocket.
